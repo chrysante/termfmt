@@ -8,6 +8,8 @@
 // Forward declarations
 // Public interface follows.
 
+#define TFMT_API /* Add definition here */
+
 namespace tfmt {
 
 class Modifier;
@@ -27,9 +29,6 @@ template <typename T, typename CharT>
 concept Printable = requires(std::basic_ostream<CharT>& ostream, T const& t) {
     { ostream << t } -> std::convertible_to<std::basic_ostream<CharT>&>;
 };
-template <typename T>
-concept AnyPrintable = Printable<T, char> || Printable<T, wchar_t>;
-
 
 }} // namespace tfmt::internal
 
@@ -41,43 +40,43 @@ namespace tfmt {
 
 /// Determine wether \p ostream is backed by a terminal (which supports ANSI format codes).
 template <typename CharT>
-bool isTerminal(std::basic_ostream<CharT> const& ostream);
+TFMT_API bool isTerminal(std::basic_ostream<CharT> const& ostream);
 
 /// Set or unset \p ostream to be formattable.
 /// \details This can be used to force emission of format codes into \p std::ostream objects which are not determined to be terminals by \p tfmt::isTerminal()
 template <typename CharT>
-void setFormattable(std::basic_ostream<CharT>& ostream, bool value = true);
+TFMT_API void setFormattable(std::basic_ostream<CharT>& ostream, bool value = true);
 
 /// Query wether \p ostream has been marked formattable with a call to \p setFormattable() or is a terminal as determined by \p tfmt::isTerminal()
 template <typename CharT>
-bool isFormattable(std::basic_ostream<CharT> const& ostream);
+TFMT_API bool isFormattable(std::basic_ostream<CharT> const& ostream);
 
 /// Combine modifiers \p lhs and \p rhs
-Modifier operator|(Modifier const& rhs, Modifier const& lhs);
+TFMT_API Modifier operator|(Modifier const& rhs, Modifier const& lhs);
 
 /// \overload
-Modifier operator|(Modifier&& rhs, Modifier const& lhs);
+TFMT_API Modifier operator|(Modifier&& rhs, Modifier const& lhs);
 
 /// Push a modifier to \p ostream .
 /// \details \p pushModifier() and \p popModifier() associate objects of type \p std::basic_ostream<...> with a stack of modifiers. Stacks are destroyed with destruction of the ostream object.
 template <typename CharT>
-void pushModifier(Modifier mod, std::basic_ostream<CharT>& ostream);
+TFMT_API void pushModifier(Modifier mod, std::basic_ostream<CharT>& ostream);
 
 /// \overload
 /// Push modifier to stdout.
-void pushModifier(Modifier);
+TFMT_API void pushModifier(Modifier);
 
 /// Pop a modifier from \p ostream .
 template <typename CharT>
-void popModifier(std::basic_ostream<CharT>& ostream);
+TFMT_API void popModifier(std::basic_ostream<CharT>& ostream);
 
 /// \overload
 /// Pop modifier from stdout.
-void popModifier();
+TFMT_API void popModifier();
 
 /// Scope guard object. Push modifier \p mod to \p ostream on construction, pop on destruction.
 template <typename OStream>
-class FormatGuard {
+class TFMT_API FormatGuard {
 public:
     explicit FormatGuard(Modifier mod, OStream& ostream);
     
@@ -89,7 +88,7 @@ private:
 
 /// \p FormatGuard for \p stdout .
 template <>
-class FormatGuard<void> {
+class TFMT_API FormatGuard<void> {
 public:
     explicit FormatGuard(Modifier mod);
     
@@ -102,22 +101,22 @@ FormatGuard(Modifier) -> FormatGuard<void>;
 /// \details Push \p mod to a stack of modifiers applied applied to \p ostream and execute \p fn .
 /// \details After execution of \p fn the modifier \p mod will be popped from the stack.
 template <typename CharT>
-void format(Modifier mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn);
+TFMT_API void format(Modifier mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn);
 
 /// \overload
 /// Execute \p fn with modifiers applied to \p stdout
-void format(Modifier mod, std::invocable auto&& fn);
+TFMT_API void format(Modifier mod, std::invocable auto&& fn);
 
 /// Wrap a set of objects with a modifier
 /// \details Use with \p operator<<(std::ostream&,...) :
 /// \details \p mod will be applied to the \p std::ostream object, \p objects... will be inserted and \p mod will be undone.
-template <internal::AnyPrintable... T>
-internal::ObjectWrapper<T...> format(Modifier mod, T const&... objects);
+template <typename... T>
+TFMT_API internal::ObjectWrapper<T...> format(Modifier mod, T const&... objects);
 
 /// Wrap \p ostream with the modifier \p mod
 /// \details On every insertion into the return object, \p mod will be applied.
 template <typename CharT>
-internal::OStreamWrapper<CharT> format(Modifier mod, std::basic_ostream<CharT>& ostream);
+TFMT_API internal::OStreamWrapper<CharT> format(Modifier mod, std::basic_ostream<CharT>& ostream);
 
 /// Reset all currently applied ANSI format codes.
 /// This should not be used directly. Prefer using the \p format(...) wrapper functions above.
@@ -242,7 +241,7 @@ public:
     
     ObjectWrapper(ObjectWrapper const&) = delete;
     
-    template <typename CharT>
+    template <typename CharT> requires (... && Printable<T, CharT>)
     friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& ostream, ObjectWrapper const& wrapper) {
         FormatGuard fmt(wrapper.mod, ostream);
         [&]<std::size_t... I>(std::index_sequence<I...>) {
@@ -256,7 +255,7 @@ private:
     std::tuple<T const&...> objects;
 };
 
-template <tfmt::internal::AnyPrintable... T>
+template <typename... T>
 tfmt::internal::ObjectWrapper<T...> tfmt::format(Modifier mod, T const&... objects) {
     return internal::ObjectWrapper<T...>(std::move(mod), objects...);
 }
@@ -297,5 +296,7 @@ template <typename CharT>
 tfmt::internal::OStreamWrapper<CharT> tfmt::format(Modifier mod, std::basic_ostream<CharT>& ostream) {
     return internal::OStreamWrapper<CharT>(std::move(mod), ostream);
 }
+
+#undef TFMT_API
 
 #endif // TERMFORMAT_H_

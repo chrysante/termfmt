@@ -1,31 +1,35 @@
 #include "termformat.h"
 
 #include <iostream>
+#include <new>
 #include <vector>
 
 #if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__)))
-
-#include <unistd.h>
-
+#   define TFMT_UNIX 1
 #elif defined(_WIN32)
-
-#error
-
+#   define TFMT_WINDOWS 1
 #else
+#   error Unknown platform
+#endif
 
-#error Unknown platform
-
+#if TFMT_UNIX
+#   include <unistd.h>
+#elif TFMT_UNIX
+#   error No windows support yet
 #endif
 
 using namespace tfmt;
 
-static bool filedescIsTerminal(int filedesc) {
-#if !defined(_WIN32)
-    bool const isATTY = isatty(filedesc);
-#else
-    bool const isATTY = _isatty(filedesc);
+static int isattyWrapper(FILE* file) {
+#if TFMT_UNIX
+    return isatty(fileno(file));
+#elif TFMT_WINDOWS
+    return _isatty(_fileno(file));
 #endif
-    
+}
+
+static bool filedescIsTerminal(FILE* file) {
+    bool const isATTY = isattyWrapper(file);
 #if defined(__APPLE__) && defined(__MACH__)
     return isATTY && std::getenv("TERM") != nullptr;
 #else
@@ -34,25 +38,25 @@ static bool filedescIsTerminal(int filedesc) {
 }
 
 template <typename OStream>
-static bool isTerminalImpl(OStream const& ostream, OStream const& globalOStream, int filedesc) {
+static bool isTerminalImpl(OStream const& ostream, OStream const& globalOStream, FILE* file) {
     if (&ostream == &globalOStream) {
-        return filedescIsTerminal(filedesc);
+        return filedescIsTerminal(file);
     }
     return false;;
 }
 
 template<>
 bool tfmt::isTerminal(std::ostream const& ostream) {
-    return isTerminalImpl(ostream, std::cout, STDOUT_FILENO) ||
-           isTerminalImpl(ostream, std::cerr, STDERR_FILENO) ||
-           isTerminalImpl(ostream, std::clog, STDERR_FILENO);
+    return isTerminalImpl(ostream, std::cout, stdout) ||
+           isTerminalImpl(ostream, std::cerr, stderr) ||
+           isTerminalImpl(ostream, std::clog, stderr);
 }
 
 template <>
 bool tfmt::isTerminal(std::wostream const& ostream) {
-    return isTerminalImpl(ostream, std::wcout, STDOUT_FILENO) ||
-           isTerminalImpl(ostream, std::wcerr, STDERR_FILENO) ||
-           isTerminalImpl(ostream, std::wclog, STDERR_FILENO);
+    return isTerminalImpl(ostream, std::wcout, stdout) ||
+           isTerminalImpl(ostream, std::wcerr, stderr) ||
+           isTerminalImpl(ostream, std::wclog, stderr);
 }
 
 static auto tcOStreamIndex() {
@@ -151,7 +155,7 @@ void tfmt::popModifier() {
     popModifier(std::cout);
 }
 
-extern internal::ModBase const tfmt::reset{ "\033[00m"  };
+extern internal::ModBase const tfmt::reset  { "\033[00m"  };
 
 extern Modifier const tfmt::bold            { "\033[1m"   };
 extern Modifier const tfmt::italic          { "\033[3m"   };
@@ -168,6 +172,7 @@ extern Modifier const tfmt::blue            { "\033[34m"  };
 extern Modifier const tfmt::magenta         { "\033[35m"  };
 extern Modifier const tfmt::cyan            { "\033[36m"  };
 extern Modifier const tfmt::white           { "\033[37m"  };
+
 extern Modifier const tfmt::brightGrey      { "\033[90m"  };
 extern Modifier const tfmt::brightRed       { "\033[91m"  };
 extern Modifier const tfmt::brightGreen     { "\033[92m"  };
@@ -176,6 +181,7 @@ extern Modifier const tfmt::brightBlue      { "\033[94m"  };
 extern Modifier const tfmt::brightMagenta   { "\033[95m"  };
 extern Modifier const tfmt::brightCyan      { "\033[96m"  };
 extern Modifier const tfmt::brightWhite     { "\033[97m"  };
+
 extern Modifier const tfmt::bgGrey          { "\033[40m"  };
 extern Modifier const tfmt::bgRed           { "\033[41m"  };
 extern Modifier const tfmt::bgGreen         { "\033[42m"  };
@@ -184,6 +190,7 @@ extern Modifier const tfmt::bgBlue          { "\033[44m"  };
 extern Modifier const tfmt::bgMagenta       { "\033[45m"  };
 extern Modifier const tfmt::bgCyan          { "\033[46m"  };
 extern Modifier const tfmt::bgWhite         { "\033[47m"  };
+
 extern Modifier const tfmt::bgBrightGrey    { "\033[100m" };
 extern Modifier const tfmt::bgBrightRed     { "\033[101m" };
 extern Modifier const tfmt::bgBrightGreen   { "\033[102m" };
