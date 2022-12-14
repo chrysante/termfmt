@@ -41,51 +41,51 @@ bool tfmt::isFormattable(std::basic_ostream<CharT> const& ostream) {
 
 extern internal::ModBase const tfmt::reset{ "\033[00m"  };
 
-extern Mod const tfmt::bold            { "\033[1m"   };
-extern Mod const tfmt::italic          { "\033[3m"   };
-extern Mod const tfmt::underline       { "\033[4m"   };
-extern Mod const tfmt::blink           { "\033[5m"   };
-extern Mod const tfmt::concealed       { "\033[8m"   };
-extern Mod const tfmt::crossed         { "\033[9m"   };
+extern Modifier const tfmt::bold            { "\033[1m"   };
+extern Modifier const tfmt::italic          { "\033[3m"   };
+extern Modifier const tfmt::underline       { "\033[4m"   };
+extern Modifier const tfmt::blink           { "\033[5m"   };
+extern Modifier const tfmt::concealed       { "\033[8m"   };
+extern Modifier const tfmt::crossed         { "\033[9m"   };
 
-extern Mod const tfmt::grey            { "\033[30m"  };
-extern Mod const tfmt::red             { "\033[31m"  };
-extern Mod const tfmt::green           { "\033[32m"  };
-extern Mod const tfmt::yellow          { "\033[33m"  };
-extern Mod const tfmt::blue            { "\033[34m"  };
-extern Mod const tfmt::magenta         { "\033[35m"  };
-extern Mod const tfmt::cyan            { "\033[36m"  };
-extern Mod const tfmt::white           { "\033[37m"  };
-extern Mod const tfmt::brightGrey      { "\033[90m"  };
-extern Mod const tfmt::brightRed       { "\033[91m"  };
-extern Mod const tfmt::brightGreen     { "\033[92m"  };
-extern Mod const tfmt::brightYellow    { "\033[93m"  };
-extern Mod const tfmt::brightBlue      { "\033[94m"  };
-extern Mod const tfmt::brightMagenta   { "\033[95m"  };
-extern Mod const tfmt::brightCyan      { "\033[96m"  };
-extern Mod const tfmt::brightWhite     { "\033[97m"  };
-extern Mod const tfmt::bgGrey          { "\033[40m"  };
-extern Mod const tfmt::bgRed           { "\033[41m"  };
-extern Mod const tfmt::bgGreen         { "\033[42m"  };
-extern Mod const tfmt::bgYellow        { "\033[43m"  };
-extern Mod const tfmt::bgBlue          { "\033[44m"  };
-extern Mod const tfmt::bgMagenta       { "\033[45m"  };
-extern Mod const tfmt::bgCyan          { "\033[46m"  };
-extern Mod const tfmt::bgWhite         { "\033[47m"  };
-extern Mod const tfmt::bgBrightGrey    { "\033[100m" };
-extern Mod const tfmt::bgBrightRed     { "\033[101m" };
-extern Mod const tfmt::bgBrightGreen   { "\033[102m" };
-extern Mod const tfmt::bgBrightYellow  { "\033[103m" };
-extern Mod const tfmt::bgBrightBlue    { "\033[104m" };
-extern Mod const tfmt::bgBrightMagenta { "\033[105m" };
-extern Mod const tfmt::bgBrightCyan    { "\033[106m" };
-extern Mod const tfmt::bgBrightWhite   { "\033[107m" };
+extern Modifier const tfmt::grey            { "\033[30m"  };
+extern Modifier const tfmt::red             { "\033[31m"  };
+extern Modifier const tfmt::green           { "\033[32m"  };
+extern Modifier const tfmt::yellow          { "\033[33m"  };
+extern Modifier const tfmt::blue            { "\033[34m"  };
+extern Modifier const tfmt::magenta         { "\033[35m"  };
+extern Modifier const tfmt::cyan            { "\033[36m"  };
+extern Modifier const tfmt::white           { "\033[37m"  };
+extern Modifier const tfmt::brightGrey      { "\033[90m"  };
+extern Modifier const tfmt::brightRed       { "\033[91m"  };
+extern Modifier const tfmt::brightGreen     { "\033[92m"  };
+extern Modifier const tfmt::brightYellow    { "\033[93m"  };
+extern Modifier const tfmt::brightBlue      { "\033[94m"  };
+extern Modifier const tfmt::brightMagenta   { "\033[95m"  };
+extern Modifier const tfmt::brightCyan      { "\033[96m"  };
+extern Modifier const tfmt::brightWhite     { "\033[97m"  };
+extern Modifier const tfmt::bgGrey          { "\033[40m"  };
+extern Modifier const tfmt::bgRed           { "\033[41m"  };
+extern Modifier const tfmt::bgGreen         { "\033[42m"  };
+extern Modifier const tfmt::bgYellow        { "\033[43m"  };
+extern Modifier const tfmt::bgBlue          { "\033[44m"  };
+extern Modifier const tfmt::bgMagenta       { "\033[45m"  };
+extern Modifier const tfmt::bgCyan          { "\033[46m"  };
+extern Modifier const tfmt::bgWhite         { "\033[47m"  };
+extern Modifier const tfmt::bgBrightGrey    { "\033[100m" };
+extern Modifier const tfmt::bgBrightRed     { "\033[101m" };
+extern Modifier const tfmt::bgBrightGreen   { "\033[102m" };
+extern Modifier const tfmt::bgBrightYellow  { "\033[103m" };
+extern Modifier const tfmt::bgBrightBlue    { "\033[104m" };
+extern Modifier const tfmt::bgBrightMagenta { "\033[105m" };
+extern Modifier const tfmt::bgBrightCyan    { "\033[106m" };
+extern Modifier const tfmt::bgBrightWhite   { "\033[107m" };
 
 namespace {
 
 class ModStack {
 public:
-    void push(Mod mod) {
+    void push(Modifier mod) {
         mods.push_back(mod);
     }
     
@@ -96,13 +96,13 @@ public:
     template <typename CharT>
     void apply(std::basic_ostream<CharT>& ostream) const {
         ostream << reset;
-        for (Mod mod: mods) {
+        for (Modifier mod: mods) {
             ostream << mod;
         }
     }
     
 private:
-    std::vector<Mod> mods;
+    std::vector<Modifier> mods;
 };
 
 } // namespace
@@ -110,7 +110,7 @@ private:
 static std::unordered_map<std::ios_base*, ModStack> globalModStacks;
 
 template <typename CharT>
-void internal::pushMod(std::basic_ostream<CharT>& ostream, Mod const& mod) {
+void internal::pushMod(std::basic_ostream<CharT>& ostream, Modifier const& mod) {
     auto& stack = globalModStacks[&ostream];
     stack.push(mod);
     stack.apply(ostream);

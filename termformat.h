@@ -10,7 +10,7 @@
 
 namespace tfmt {
 
-class Mod;
+class Modifier;
 
 } // namespace tfmt
 
@@ -51,74 +51,74 @@ template <typename CharT>
 bool isFormattable(std::basic_ostream<CharT> const& ostream);
 
 /// Combine modifiers \p lhs and \p rhs
-Mod operator|(Mod const& rhs, Mod const& lhs);
+Modifier operator|(Modifier const& rhs, Modifier const& lhs);
 
 /// \overload
-Mod operator|(Mod&& rhs, Mod const& lhs);
+Modifier operator|(Modifier&& rhs, Modifier const& lhs);
 
 /// Execute \p fn with modifiers applied.
 /// \details Push \p mod to a stack of modifiers applied applied to \p ostream and execute \p fn .
 /// \details After execution of \p fn the modifier \p mod will be popped from the stack.
 template <typename CharT>
-void format(Mod const& mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn);
+void format(Modifier const& mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn);
 
 /// Wrap a set of objects with a modifier
 /// \details Use with \p operator<<(std::ostream&,...) :
 /// \details \p mod will be applied to the \p std::ostream object, \p objects... will be inserted and \p mod will be undone.
 template <internal::AnyPrintable... T>
-internal::ObjectWrapper<T...> format(Mod const& mod, T const&... objects);
+internal::ObjectWrapper<T...> format(Modifier const& mod, T const&... objects);
 
 /// Wrap \p ostream with the modifier \p mod
 /// \details On every insertion into the return object, \p mod will be applied.
 template <typename CharT>
-internal::OStreamWrapper<CharT> format(Mod mod, std::basic_ostream<CharT>& ostream);
+internal::OStreamWrapper<CharT> format(Modifier mod, std::basic_ostream<CharT>& ostream);
 
 /// Reset all currently applied ANSI format codes.
 /// This should not be used directly. Prefer using the \p format(...) wrapper functions above.
 extern internal::ModBase const reset;
 
-extern Mod const bold;
-extern Mod const italic;
-extern Mod const underline;
-extern Mod const blink;
-extern Mod const concealed;
-extern Mod const crossed;
+extern Modifier const bold;
+extern Modifier const italic;
+extern Modifier const underline;
+extern Modifier const blink;
+extern Modifier const concealed;
+extern Modifier const crossed;
 
-extern Mod const grey;
-extern Mod const red;
-extern Mod const green;
-extern Mod const yellow;
-extern Mod const blue;
-extern Mod const magenta;
-extern Mod const cyan;
-extern Mod const white;
+extern Modifier const grey;
+extern Modifier const red;
+extern Modifier const green;
+extern Modifier const yellow;
+extern Modifier const blue;
+extern Modifier const magenta;
+extern Modifier const cyan;
+extern Modifier const white;
 
-extern Mod const brightGrey;
-extern Mod const brightRed;
-extern Mod const brightGreen;
-extern Mod const brightYellow;
-extern Mod const brightBlue;
-extern Mod const brightMagenta;
-extern Mod const brightCyan;
-extern Mod const brightWhite;
+extern Modifier const brightGrey;
+extern Modifier const brightRed;
+extern Modifier const brightGreen;
+extern Modifier const brightYellow;
+extern Modifier const brightBlue;
+extern Modifier const brightMagenta;
+extern Modifier const brightCyan;
+extern Modifier const brightWhite;
 
-extern Mod const bgGrey;
-extern Mod const bgRed;
-extern Mod const bgGreen;
-extern Mod const bgYellow;
-extern Mod const bgBlue;
-extern Mod const bgMagenta;
-extern Mod const bgCyan;
-extern Mod const bgWhite;
+extern Modifier const bgGrey;
+extern Modifier const bgRed;
+extern Modifier const bgGreen;
+extern Modifier const bgYellow;
+extern Modifier const bgBlue;
+extern Modifier const bgMagenta;
+extern Modifier const bgCyan;
+extern Modifier const bgWhite;
 
-extern Mod const bgBrightGrey;
-extern Mod const bgBrightRed;
-extern Mod const bgBrightGreen;
-extern Mod const bgBrightYellow;
-extern Mod const bgBrightBlue;
-extern Mod const bgBrightMagenta;
-extern Mod const bgBrightCyan;
-extern Mod const bgBrightWhite;
+extern Modifier const bgBrightGrey;
+extern Modifier const bgBrightRed;
+extern Modifier const bgBrightGreen;
+extern Modifier const bgBrightYellow;
+extern Modifier const bgBrightBlue;
+extern Modifier const bgBrightMagenta;
+extern Modifier const bgBrightCyan;
+extern Modifier const bgBrightWhite;
 
 } // namespace tfmt
 
@@ -127,7 +127,7 @@ extern Mod const bgBrightWhite;
 namespace tfmt::internal {
 
 template <typename CharT>
-void pushMod(std::basic_ostream<CharT>&, Mod const&);
+void pushMod(std::basic_ostream<CharT>&, Modifier const&);
 
 template <typename CharT>
 void popMod(std::basic_ostream<CharT>&);
@@ -142,7 +142,7 @@ struct ScopeGuard {
 } // namespace tfmt::internal
 
 template <typename CharT>
-void tfmt::format(Mod const& mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn) {
+void tfmt::format(Modifier const& mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn) {
     internal::pushMod(ostream, mod);
     internal::ScopeGuard pop = [&]{ internal::popMod(ostream); };
     std::invoke(fn);
@@ -165,27 +165,27 @@ protected:
     std::string buffer;
 };
 
-class tfmt::Mod: public internal::ModBase {
+class tfmt::Modifier: public internal::ModBase {
 public:
     using internal::ModBase::ModBase;
     
-    friend Mod tfmt::operator|(Mod const& lhs, Mod const& rhs);
-    friend Mod tfmt::operator|(Mod&& lhs, Mod const& rhs);
+    friend Modifier tfmt::operator|(Modifier const& lhs, Modifier const& rhs);
+    friend Modifier tfmt::operator|(Modifier&& lhs, Modifier const& rhs);
 };
 
-inline tfmt::Mod tfmt::operator|(Mod const& lhs, Mod const& rhs) {
-    return Mod(lhs.buffer + rhs.buffer);
+inline tfmt::Modifier tfmt::operator|(Modifier const& lhs, Modifier const& rhs) {
+    return Modifier(lhs.buffer + rhs.buffer);
 }
 
-inline tfmt::Mod tfmt::operator|(Mod&& lhs, Mod const& rhs) {
+inline tfmt::Modifier tfmt::operator|(Modifier&& lhs, Modifier const& rhs) {
     lhs.buffer += rhs.buffer;
-    return Mod(std::move(lhs.buffer));
+    return Modifier(std::move(lhs.buffer));
 }
 
 template <typename... T>
 class tfmt::internal::ObjectWrapper {
 public:
-    explicit ObjectWrapper(Mod mod, T const&... objects): mod(std::move(mod)), objects(objects...) {}
+    explicit ObjectWrapper(Modifier mod, T const&... objects): mod(std::move(mod)), objects(objects...) {}
     
     ObjectWrapper(ObjectWrapper const&) = delete;
     
@@ -200,19 +200,19 @@ public:
     }
     
 private:
-    Mod mod;
+    Modifier mod;
     std::tuple<T const&...> objects;
 };
 
 template <tfmt::internal::AnyPrintable... T>
-tfmt::internal::ObjectWrapper<T...> tfmt::format(Mod const& mod, T const&... objects) {
+tfmt::internal::ObjectWrapper<T...> tfmt::format(Modifier const& mod, T const&... objects) {
     return internal::ObjectWrapper<T...>(mod, objects...);
 }
 
 template <typename CharT>
 class tfmt::internal::OStreamWrapper {
 public:
-    explicit OStreamWrapper(Mod mod, std::basic_ostream<CharT>& ostream): mod(std::move(mod)), ostream(ostream) {}
+    explicit OStreamWrapper(Modifier mod, std::basic_ostream<CharT>& ostream): mod(std::move(mod)), ostream(ostream) {}
   
     template <Printable<CharT> T>
     friend OStreamWrapper<CharT>& operator<<(OStreamWrapper<CharT>& wrapper, T const& object) {
@@ -238,12 +238,12 @@ public:
     }
     
 private:
-    Mod mod;
+    Modifier mod;
     std::basic_ostream<CharT>& ostream;
 };
 
 template <typename CharT>
-tfmt::internal::OStreamWrapper<CharT> tfmt::format(Mod mod, std::basic_ostream<CharT>& ostream) {
+tfmt::internal::OStreamWrapper<CharT> tfmt::format(Modifier mod, std::basic_ostream<CharT>& ostream) {
     return internal::OStreamWrapper<CharT>(std::move(mod), ostream);
 }
 
