@@ -56,17 +56,44 @@ Modifier operator|(Modifier const& rhs, Modifier const& lhs);
 /// \overload
 Modifier operator|(Modifier&& rhs, Modifier const& lhs);
 
+/// Scope guard object. Push modifier \p mod to \p ostream on construction, pop on destruction.
+template <typename OStream>
+class FormatGuard {
+public:
+    explicit FormatGuard(Modifier mod, OStream& ostream);
+    
+    ~FormatGuard();
+    
+private:
+    OStream* ostream;
+};
+
+/// \p FormatGuard for \p stdout .
+template <>
+class FormatGuard<void> {
+public:
+    explicit FormatGuard(Modifier mod);
+    
+    ~FormatGuard();
+};
+
+FormatGuard(Modifier) -> FormatGuard<void>;
+
 /// Execute \p fn with modifiers applied.
 /// \details Push \p mod to a stack of modifiers applied applied to \p ostream and execute \p fn .
 /// \details After execution of \p fn the modifier \p mod will be popped from the stack.
 template <typename CharT>
-void format(Modifier const& mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn);
+void format(Modifier mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn);
+
+/// \overload
+/// Execute \p fn with modifiers applied to \p stdout
+void format(Modifier mod, std::invocable auto&& fn);
 
 /// Wrap a set of objects with a modifier
 /// \details Use with \p operator<<(std::ostream&,...) :
 /// \details \p mod will be applied to the \p std::ostream object, \p objects... will be inserted and \p mod will be undone.
 template <internal::AnyPrintable... T>
-internal::ObjectWrapper<T...> format(Modifier const& mod, T const&... objects);
+internal::ObjectWrapper<T...> format(Modifier mod, T const&... objects);
 
 /// Wrap \p ostream with the modifier \p mod
 /// \details On every insertion into the return object, \p mod will be applied.
@@ -127,26 +154,17 @@ extern Modifier const bgBrightWhite;
 namespace tfmt::internal {
 
 template <typename CharT>
-void pushMod(std::basic_ostream<CharT>&, Modifier const&);
+void pushMod(Modifier&&, std::basic_ostream<CharT>&);
 
 template <typename CharT>
 void popMod(std::basic_ostream<CharT>&);
 
-template <typename F>
-struct ScopeGuard {
-    constexpr ScopeGuard(F&& f): f(std::move(f)) {}
-    constexpr ~ScopeGuard() { std::invoke(f); }
-    F f;
-};
+// Push modifier to stdout
+void pushMod(Modifier&&);
+// Pop modifier from stdout
+void popMod();
 
 } // namespace tfmt::internal
-
-template <typename CharT>
-void tfmt::format(Modifier const& mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn) {
-    internal::pushMod(ostream, mod);
-    internal::ScopeGuard pop = [&]{ internal::popMod(ostream); };
-    std::invoke(fn);
-}
 
 class tfmt::internal::ModBase {
 public:
@@ -182,6 +200,35 @@ inline tfmt::Modifier tfmt::operator|(Modifier&& lhs, Modifier const& rhs) {
     return Modifier(std::move(lhs.buffer));
 }
 
+template <typename OStream>
+tfmt::FormatGuard<OStream>::FormatGuard(Modifier mod, OStream& ostream): ostream(&ostream) {
+    internal::pushMod(std::move(mod), *this->ostream);
+}
+
+template <typename OStream>
+tfmt::FormatGuard<OStream>::~FormatGuard() {
+    internal::popMod(*this->ostream);
+}
+
+inline tfmt::FormatGuard<void>::FormatGuard(Modifier mod) {
+    internal::pushMod(std::move(mod));
+}
+
+inline tfmt::FormatGuard<void>::~FormatGuard() {
+    internal::popMod();
+}
+
+template <typename CharT>
+void tfmt::format(Modifier mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn) {
+    FormatGuard fmt(std::move(mod), ostream);
+    std::invoke(fn);
+}
+
+void tfmt::format(Modifier mod, std::invocable auto&& fn) {
+    FormatGuard fmt(std::move(mod));
+    std::invoke(fn);
+}
+
 template <typename... T>
 class tfmt::internal::ObjectWrapper {
 public:
@@ -191,8 +238,7 @@ public:
     
     template <typename CharT>
     friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& ostream, ObjectWrapper const& wrapper) {
-        internal::pushMod(ostream, wrapper.mod);
-        internal::ScopeGuard pop = [&]{ internal::popMod(ostream); };
+        FormatGuard fmt(wrapper.mod, ostream);
         [&]<std::size_t... I>(std::index_sequence<I...>) {
             ((ostream << std::get<I>(wrapper.objects)), ...);
         }(std::index_sequence_for<T...>{});
@@ -205,8 +251,8 @@ private:
 };
 
 template <tfmt::internal::AnyPrintable... T>
-tfmt::internal::ObjectWrapper<T...> tfmt::format(Modifier const& mod, T const&... objects) {
-    return internal::ObjectWrapper<T...>(mod, objects...);
+tfmt::internal::ObjectWrapper<T...> tfmt::format(Modifier mod, T const&... objects) {
+    return internal::ObjectWrapper<T...>(std::move(mod), objects...);
 }
 
 template <typename CharT>
@@ -216,8 +262,7 @@ public:
   
     template <Printable<CharT> T>
     friend OStreamWrapper<CharT>& operator<<(OStreamWrapper<CharT>& wrapper, T const& object) {
-        internal::pushMod(wrapper.ostream, wrapper.mod);
-        internal::ScopeGuard pop = [&]{ internal::popMod(wrapper.ostream); };
+        FormatGuard fmt(wrapper.mod, wrapper.ostream);
         wrapper.ostream << object;
         return wrapper;
     }

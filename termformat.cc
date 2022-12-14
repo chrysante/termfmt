@@ -85,8 +85,8 @@ namespace {
 
 class ModStack {
 public:
-    void push(Modifier mod) {
-        mods.push_back(mod);
+    void push(Modifier&& mod) {
+        mods.push_back(std::move(mod));
     }
     
     void pop() {
@@ -110,9 +110,9 @@ private:
 static std::unordered_map<std::ios_base*, ModStack> globalModStacks;
 
 template <typename CharT>
-void internal::pushMod(std::basic_ostream<CharT>& ostream, Modifier const& mod) {
+void internal::pushMod(Modifier&& mod, std::basic_ostream<CharT>& ostream) {
     auto& stack = globalModStacks[&ostream];
-    stack.push(mod);
+    stack.push(std::move(mod));
     stack.apply(ostream);
 }
 
@@ -123,8 +123,16 @@ void internal::popMod(std::basic_ostream<CharT>& ostream) {
     stack.apply(ostream);
 }
 
-template void internal::pushMod(std::ostream&, Mod const&);
-template void internal::pushMod(std::wostream&, Mod const&);
+template void internal::pushMod(Modifier&&, std::ostream&);
+template void internal::pushMod(Modifier&&, std::wostream&);
 
 template void internal::popMod(std::ostream&);
 template void internal::popMod(std::wostream&);
+
+void internal::pushMod(Modifier&& mod) {
+    pushMod(std::move(mod), std::cout);
+}
+
+void internal::popMod() {
+    popMod(std::cout);
+}

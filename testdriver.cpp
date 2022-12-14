@@ -30,28 +30,35 @@ int main() {
     std::cout << "Some code here, this is " << tfmt::format(tfmt::italic,            "special") << " \n";
     std::cout << "                        " << tfmt::format(tfmt::red | tfmt::blink, "▔▔▔▔▔▔▔") << "\n";
     
-    tfmt::format(tfmt::red, std::wcout, [&]{
+    tfmt::format(tfmt::red, [&]{
         std::wcout << "this is red and also ";
-        tfmt::format(tfmt::underline, std::wcout, [&]{
+        tfmt::format(tfmt::underline, [&]{
             std::wcout << "underlined";
-            tfmt::format(tfmt::italic, std::wcout, [&]{
+            tfmt::format(tfmt::italic, [&]{
                 std::wcout << " and now italic\n";
             });
         });
     });
     
-    std::wcout << tfmt::bgMagenta << "Hello World" << tfmt::reset << std::endl;
+    std::wcout << tfmt::bgBrightMagenta << "Hello World" << tfmt::reset << std::endl;
     
-    
-    tfmt::format(tfmt::bgMagenta, std::wcout, [&]{
+    tfmt::format(tfmt::bgBrightMagenta, [&]{
         std::wcout << "on magenta bg\n";
     });
     
+    {
+        tfmt::FormatGuard fmt(tfmt::bgGrey | tfmt::brightWhite);
+        std::wcout << "on grey bg\n";
+    }
     
-    std::cout << tfmt::bgMagenta;
+    {
+        tfmt::FormatGuard fmt(tfmt::bgBrightBlue | tfmt::brightWhite, std::cout);
+        std::wcout << "on blue bg\n";
+    }
+    
+    std::cout << tfmt::bgBrightMagenta;
     
     std::cout << "A\nB\nC\n";
-    
     
     std::cout << tfmt::reset;
     
