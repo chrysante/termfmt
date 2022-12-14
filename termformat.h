@@ -78,24 +78,26 @@ TFMT_API void popModifier();
 template <typename OStream>
 class TFMT_API FormatGuard {
 public:
+    /// Apply \p mod to \p ostream for the lifetime of this object.
     explicit FormatGuard(Modifier mod, OStream& ostream);
     
+    /// Apply \p mod to \p stdout for the lifetime of this object.
+    explicit FormatGuard(Modifier mod);
+    
+    FormatGuard(FormatGuard&& rhs) noexcept;
+    
+    FormatGuard& operator=(FormatGuard&& rhs) noexcept;
+    
     ~FormatGuard();
+    
+private:
+    void pop();
     
 private:
     OStream* ostream;
 };
 
-/// \p FormatGuard for \p stdout .
-template <>
-class TFMT_API FormatGuard<void> {
-public:
-    explicit FormatGuard(Modifier mod);
-    
-    ~FormatGuard();
-};
-
-FormatGuard(Modifier) -> FormatGuard<void>;
+FormatGuard(Modifier) -> FormatGuard<std::ostream>;
 
 /// Execute \p fn with modifiers applied.
 /// \details Push \p mod to a stack of modifiers applied applied to \p ostream and execute \p fn .
@@ -211,16 +213,26 @@ tfmt::FormatGuard<OStream>::FormatGuard(Modifier mod, OStream& ostream): ostream
 }
 
 template <typename OStream>
+tfmt::FormatGuard<OStream>::FormatGuard(FormatGuard&& rhs) noexcept: ostream(rhs.ostream) {
+    rhs.ostream = nullptr;
+}
+
+template <typename OStream>
+tfmt::FormatGuard<OStream>& tfmt::FormatGuard<OStream>::operator=(FormatGuard&& rhs) noexcept {
+    pop();
+    ostream = rhs.ostream;
+    rhs.ostream = nullptr;
+}
+
+template <typename OStream>
 tfmt::FormatGuard<OStream>::~FormatGuard() {
-    popModifier(*this->ostream);
+    pop();
 }
 
-inline tfmt::FormatGuard<void>::FormatGuard(Modifier mod) {
-    pushModifier(std::move(mod));
-}
-
-inline tfmt::FormatGuard<void>::~FormatGuard() {
-    popModifier();
+template <typename OStream>
+void tfmt::FormatGuard<OStream>::pop() {
+    if (ostream == nullptr) { return; }
+    popModifier(*ostream);
 }
 
 template <typename CharT>

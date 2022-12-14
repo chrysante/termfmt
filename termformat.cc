@@ -31,7 +31,8 @@ static int isattyWrapper(FILE* file) {
 static bool filedescIsTerminal(FILE* file) {
     bool const isATTY = isattyWrapper(file);
 #if defined(__APPLE__) && defined(__MACH__)
-    return isATTY && std::getenv("TERM") != nullptr;
+    static bool const envTermDefined = std::getenv("TERM") != nullptr;
+    return isATTY && envTermDefined;
 #else
     return isATTY;
 #endif
@@ -154,6 +155,12 @@ void tfmt::pushModifier(Modifier mod) {
 void tfmt::popModifier() {
     popModifier(std::cout);
 }
+
+template <>
+tfmt::FormatGuard<std::ostream>::FormatGuard(Modifier mod): FormatGuard(std::move(mod), std::cout) {}
+
+template <>
+tfmt::FormatGuard<std::wostream>::FormatGuard(Modifier mod): FormatGuard(std::move(mod), std::wcout) {}
 
 extern internal::ModBase const tfmt::reset  { "\033[00m"  };
 
