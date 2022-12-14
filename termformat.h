@@ -5,7 +5,7 @@
 #include <string>
 #include <iosfwd>
 
-// MARK: Forward declarations
+// Forward declarations
 // Public interface follows.
 
 namespace tfmt {
@@ -33,7 +33,9 @@ concept AnyPrintable = Printable<T, char> || Printable<T, wchar_t>;
 
 }} // namespace tfmt::internal
 
-// MARK: Public interface
+// ===------------------------------------------------------===
+// === Public interface ------------------------------------===
+// ===------------------------------------------------------===
 
 namespace tfmt {
 
@@ -55,6 +57,23 @@ Modifier operator|(Modifier const& rhs, Modifier const& lhs);
 
 /// \overload
 Modifier operator|(Modifier&& rhs, Modifier const& lhs);
+
+/// Push a modifier to \p ostream .
+/// \details \p pushModifier() and \p popModifier() associate objects of type \p std::basic_ostream<...> with a stack of modifiers. Stacks are destroyed with destruction of the ostream object.
+template <typename CharT>
+void pushModifier(Modifier mod, std::basic_ostream<CharT>& ostream);
+
+/// \overload
+/// Push modifier to stdout.
+void pushModifier(Modifier);
+
+/// Pop a modifier from \p ostream .
+template <typename CharT>
+void popModifier(std::basic_ostream<CharT>& ostream);
+
+/// \overload
+/// Pop modifier from stdout.
+void popModifier();
 
 /// Scope guard object. Push modifier \p mod to \p ostream on construction, pop on destruction.
 template <typename OStream>
@@ -149,22 +168,9 @@ extern Modifier const bgBrightWhite;
 
 } // namespace tfmt
 
-// MARK: Implementation
-
-namespace tfmt::internal {
-
-template <typename CharT>
-void pushMod(Modifier&&, std::basic_ostream<CharT>&);
-
-template <typename CharT>
-void popMod(std::basic_ostream<CharT>&);
-
-// Push modifier to stdout
-void pushMod(Modifier&&);
-// Pop modifier from stdout
-void popMod();
-
-} // namespace tfmt::internal
+// ===------------------------------------------------------===
+// === Inline implementation -------------------------------===
+// ===------------------------------------------------------===
 
 class tfmt::internal::ModBase {
 public:
@@ -202,20 +208,20 @@ inline tfmt::Modifier tfmt::operator|(Modifier&& lhs, Modifier const& rhs) {
 
 template <typename OStream>
 tfmt::FormatGuard<OStream>::FormatGuard(Modifier mod, OStream& ostream): ostream(&ostream) {
-    internal::pushMod(std::move(mod), *this->ostream);
+    pushModifier(std::move(mod), *this->ostream);
 }
 
 template <typename OStream>
 tfmt::FormatGuard<OStream>::~FormatGuard() {
-    internal::popMod(*this->ostream);
+    popModifier(*this->ostream);
 }
 
 inline tfmt::FormatGuard<void>::FormatGuard(Modifier mod) {
-    internal::pushMod(std::move(mod));
+    pushModifier(std::move(mod));
 }
 
 inline tfmt::FormatGuard<void>::~FormatGuard() {
-    internal::popMod();
+    popModifier();
 }
 
 template <typename CharT>

@@ -1,29 +1,68 @@
 #include "termformat.h"
 
 #include <iostream>
-#include <unordered_map>
 #include <vector>
+
+#if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__)))
+
+#include <unistd.h>
+
+#elif defined(_WIN32)
+
+#error
+
+#else
+
+#error Unknown platform
+
+#endif
 
 using namespace tfmt;
 
+static bool filedescIsTerminal(int filedesc) {
+#if !defined(_WIN32)
+    bool const isATTY = isatty(filedesc);
+#else
+    bool const isATTY = _isatty(filedesc);
+#endif
+    
+#if defined(__APPLE__) && defined(__MACH__)
+    return isATTY && std::getenv("TERM") != nullptr;
+#else
+    return isATTY;
+#endif
+}
+
+template <typename OStream>
+static bool isTerminalImpl(OStream const& ostream, OStream const& globalOStream, int filedesc) {
+    if (&ostream == &globalOStream) {
+        return filedescIsTerminal(filedesc);
+    }
+    return false;;
+}
+
 template<>
 bool tfmt::isTerminal(std::ostream const& ostream) {
-    return &ostream == &std::cout && getenv("TERM");
+    return isTerminalImpl(ostream, std::cout, STDOUT_FILENO) ||
+           isTerminalImpl(ostream, std::cerr, STDERR_FILENO) ||
+           isTerminalImpl(ostream, std::clog, STDERR_FILENO);
 }
 
 template <>
 bool tfmt::isTerminal(std::wostream const& ostream) {
-    return &ostream == &std::wcout && getenv("TERM");
+    return isTerminalImpl(ostream, std::wcout, STDOUT_FILENO) ||
+           isTerminalImpl(ostream, std::wcerr, STDERR_FILENO) ||
+           isTerminalImpl(ostream, std::wclog, STDERR_FILENO);
 }
 
-static auto tcGetIndex() {
+static auto tcOStreamIndex() {
     static auto const index = std::ios_base::xalloc();
     return index;
 }
 
 template <typename CharT>
 void tfmt::setFormattable(std::basic_ostream<CharT>& ostream, bool value) {
-    static auto const index = tcGetIndex();
+    static auto const index = tcOStreamIndex();
     ostream.iword(index) = value;
 }
 
@@ -32,11 +71,84 @@ template void tfmt::setFormattable(std::wostream&, bool);
 
 template <typename CharT>
 bool tfmt::isFormattable(std::basic_ostream<CharT> const& ostream) {
-    static auto const index = tcGetIndex();
+    static auto const index = tcOStreamIndex();
     // We need to cast away constness to access .iword() method on std::ostream, as it does not provide a const overload.
-    // However we take the ostream argument by const& as conceptually this method is const.
+    // However we take the ostream argument by const& as conceptually this query does not modify the object.
     std::basic_ostream<CharT>& mutableOstream = const_cast<std::basic_ostream<CharT>&>(ostream);
     return static_cast<bool>(mutableOstream.iword(index)) || isTerminal(ostream);
+}
+
+namespace {
+
+class ModStack {
+public:
+    ModStack() noexcept = default;
+    
+    void push(Modifier&& mod) {
+        mods.push_back(std::move(mod));
+    }
+    
+    void pop() {
+        mods.pop_back();
+    }
+    
+    template <typename CharT>
+    void apply(std::basic_ostream<CharT>& ostream) const {
+        ostream << reset;
+        for (Modifier mod: mods) {
+            ostream << mod;
+        }
+    }
+    
+private:
+    std::vector<Modifier> mods;
+};
+
+} // namespace
+
+template <typename CharT>
+void tfmt::pushModifier(Modifier mod, std::basic_ostream<CharT>& ostream) {
+    static auto const index = tcOStreamIndex();
+    auto* stackPtr = static_cast<ModStack*>(ostream.pword(index));
+    if (stackPtr == nullptr) {
+        stackPtr = ::new ModStack();
+        ostream.pword(index) = stackPtr;
+        ostream.register_callback([](std::ios_base::event event, std::ios_base& ios, int index) {
+            if (event != std::ios_base::erase_event) {
+                return;
+            }
+            auto* stackPtr = static_cast<ModStack*>(ios.pword(index));
+            ::delete stackPtr;
+            ios.pword(index) = nullptr;
+        }, index);
+    }
+    auto& stack = *stackPtr;
+    stack.push(std::move(mod));
+    stack.apply(ostream);
+}
+
+template <typename CharT>
+void tfmt::popModifier(std::basic_ostream<CharT>& ostream) {
+    static auto const index = tcOStreamIndex();
+    auto* const stackPtr = static_cast<ModStack*>(ostream.pword(index));
+    assert(stackPtr != nullptr && "popModifier called without a prior call to pushModifier()?");
+    auto& stack = *stackPtr;
+    stack.pop();
+    stack.apply(ostream);
+}
+
+template void tfmt::pushModifier(Modifier, std::ostream&);
+template void tfmt::pushModifier(Modifier, std::wostream&);
+
+template void tfmt::popModifier(std::ostream&);
+template void tfmt::popModifier(std::wostream&);
+
+void tfmt::pushModifier(Modifier mod) {
+    pushModifier(std::move(mod), std::cout);
+}
+
+void tfmt::popModifier() {
+    popModifier(std::cout);
 }
 
 extern internal::ModBase const tfmt::reset{ "\033[00m"  };
@@ -80,59 +192,3 @@ extern Modifier const tfmt::bgBrightBlue    { "\033[104m" };
 extern Modifier const tfmt::bgBrightMagenta { "\033[105m" };
 extern Modifier const tfmt::bgBrightCyan    { "\033[106m" };
 extern Modifier const tfmt::bgBrightWhite   { "\033[107m" };
-
-namespace {
-
-class ModStack {
-public:
-    void push(Modifier&& mod) {
-        mods.push_back(std::move(mod));
-    }
-    
-    void pop() {
-        mods.pop_back();
-    }
-    
-    template <typename CharT>
-    void apply(std::basic_ostream<CharT>& ostream) const {
-        ostream << reset;
-        for (Modifier mod: mods) {
-            ostream << mod;
-        }
-    }
-    
-private:
-    std::vector<Modifier> mods;
-};
-
-} // namespace
-
-static std::unordered_map<std::ios_base*, ModStack> globalModStacks;
-
-template <typename CharT>
-void internal::pushMod(Modifier&& mod, std::basic_ostream<CharT>& ostream) {
-    auto& stack = globalModStacks[&ostream];
-    stack.push(std::move(mod));
-    stack.apply(ostream);
-}
-
-template <typename CharT>
-void internal::popMod(std::basic_ostream<CharT>& ostream) {
-    auto& stack = globalModStacks[&ostream];
-    stack.pop();
-    stack.apply(ostream);
-}
-
-template void internal::pushMod(Modifier&&, std::ostream&);
-template void internal::pushMod(Modifier&&, std::wostream&);
-
-template void internal::popMod(std::ostream&);
-template void internal::popMod(std::wostream&);
-
-void internal::pushMod(Modifier&& mod) {
-    pushMod(std::move(mod), std::cout);
-}
-
-void internal::popMod() {
-    popMod(std::cout);
-}

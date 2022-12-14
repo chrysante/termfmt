@@ -2,6 +2,7 @@
 
 #include <cstdio>
 #include <iostream>
+#include <sstream>
 
 [[maybe_unused]]
 static void printTestColors() {
@@ -17,13 +18,13 @@ static void printTestColors() {
 
 int main() {
     
-    std::wcout << tfmt::format(tfmt::red, 0) << std::endl;
-    std::wcout << "Some other text\n";
-    std::wcout << tfmt::format(tfmt::magenta | tfmt::bgBlue | tfmt::underline | tfmt::italic | tfmt::bold, "Some text ", "and a number: ", 1236) << std::endl;
+    std::cout << tfmt::format(tfmt::red, 0) << std::endl;
+    std::cout << "Some other text\n";
+    std::cout << tfmt::format(tfmt::magenta | tfmt::bgBlue | tfmt::underline | tfmt::italic | tfmt::bold, "Some text ", "and a number: ", 1236) << std::endl;
     
-    tfmt::format(tfmt::bgBrightBlue, std::wcout) << "This should be on blue bg. Here some more operands: " << 244 << " " << std::hex << 244 << " " << 11.5 << std::endl;
+    tfmt::format(tfmt::bgBrightBlue, std::cout) << "This should be on blue bg. Here some more operands: " << 244 << " " << std::hex << 244 << " " << 11.5 << std::endl;
     
-    tfmt::format(tfmt::red, std::wcout) << std::endl;
+    tfmt::format(tfmt::red, std::cout) << std::endl;
     
     // Desired code:
     
@@ -31,30 +32,32 @@ int main() {
     std::cout << "                        " << tfmt::format(tfmt::red | tfmt::blink, "▔▔▔▔▔▔▔") << "\n";
     
     tfmt::format(tfmt::red, [&]{
-        std::wcout << "this is red and also ";
+        std::cout << "this is red and also ";
         tfmt::format(tfmt::underline, [&]{
-            std::wcout << "underlined";
+            std::cout << "underlined";
             tfmt::format(tfmt::italic, [&]{
-                std::wcout << " and now italic\n";
+                std::cout << " and now italic\n";
             });
         });
     });
     
-    std::wcout << tfmt::bgBrightMagenta << "Hello World" << tfmt::reset << std::endl;
+    std::cout << tfmt::bgBrightMagenta << "Hello World" << tfmt::reset << std::endl;
     
     tfmt::format(tfmt::bgBrightMagenta, [&]{
-        std::wcout << "on magenta bg\n";
+        std::cout << "on magenta bg\n";
     });
     
     {
         tfmt::FormatGuard fmt(tfmt::bgGrey | tfmt::brightWhite);
-        std::wcout << "on grey bg\n";
+        std::cout << "on grey bg\n";
     }
     
     {
         tfmt::FormatGuard fmt(tfmt::bgBrightBlue | tfmt::brightWhite, std::cout);
-        std::wcout << "on blue bg\n";
+        std::cout << "on blue bg\n";
     }
+    
+    
     
     std::cout << tfmt::bgBrightMagenta;
     
@@ -63,6 +66,18 @@ int main() {
     std::cout << tfmt::reset;
     
     std::cout << "\n\n";
+    
+    std::stringstream sstr;
+    tfmt::setFormattable(sstr);
+    tfmt::pushModifier(tfmt::red, sstr);
+    std::stringstream sstr2 = std::move(sstr);
+    
+    sstr2 << "This should be red ";
+    tfmt::popModifier(sstr2);
+    sstr2 << "but not this.\n";
+    
+    std::cout << sstr2.rdbuf();
+    
 }
 
 
