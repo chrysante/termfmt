@@ -1,8 +1,8 @@
 #ifndef TERMFORMAT_H_
 #define TERMFORMAT_H_
 
-#include <string>
 #include <concepts>
+#include <string>
 #include <iosfwd>
 
 // MARK: Forward declarations
