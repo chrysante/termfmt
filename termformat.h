@@ -2,8 +2,10 @@
 #define TERMFORMAT_H_
 
 #include <concepts>
-#include <string>
 #include <iosfwd>
+#include <tuple>
+#include <type_traits>
+#include <string>
 
 // Forward declarations
 // Public interface follows.
@@ -22,12 +24,12 @@ namespace internal {
 class ModBase;
 template <typename... T>
 class ObjectWrapper;
-template <typename CharT>
+template <typename CharT, typename Traits>
 class OStreamWrapper;
 
-template <typename T, typename CharT>
-concept Printable = requires(std::basic_ostream<CharT>& ostream, T const& t) {
-    { ostream << t } -> std::convertible_to<std::basic_ostream<CharT>&>;
+template <typename T, typename CharT, typename Traits>
+concept Printable = requires(std::basic_ostream<CharT, Traits>& ostream, T const& t) {
+    { ostream << t } -> std::convertible_to<std::basic_ostream<CharT, Traits>&>;
 };
 
 }} // namespace tfmt::internal
@@ -39,17 +41,19 @@ concept Printable = requires(std::basic_ostream<CharT>& ostream, T const& t) {
 namespace tfmt {
 
 /// Determine wether \p ostream is backed by a terminal (which supports ANSI format codes).
-template <typename CharT>
-TFMT_API bool isTerminal(std::basic_ostream<CharT> const& ostream);
+template <typename CharT, typename Traits>
+TFMT_API bool isTerminal(std::basic_ostream<CharT, Traits> const& ostream);
 
 /// Set or unset \p ostream to be formattable.
-/// \details This can be used to force emission of format codes into \p std::ostream objects which are not determined to be terminals by \p tfmt::isTerminal()
-template <typename CharT>
-TFMT_API void setFormattable(std::basic_ostream<CharT>& ostream, bool value = true);
+/// \details This can be used to force emission of format codes into \p std::ostream objects which are not determined
+/// to be terminals by \p tfmt::isTerminal()
+template <typename CharT, typename Traits>
+TFMT_API void setFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value = true);
 
-/// Query wether \p ostream has been marked formattable with a call to \p setFormattable() or is a terminal as determined by \p tfmt::isTerminal()
-template <typename CharT>
-TFMT_API bool isFormattable(std::basic_ostream<CharT> const& ostream);
+/// Query wether \p ostream has been marked formattable with a call to \p setFormattable() or is a terminal as
+/// determined by \p tfmt::isTerminal()
+template <typename CharT, typename Traits>
+TFMT_API bool isFormattable(std::basic_ostream<CharT, Traits> const& ostream);
 
 /// Combine modifiers \p lhs and \p rhs
 TFMT_API Modifier operator|(Modifier const& rhs, Modifier const& lhs);
@@ -58,17 +62,18 @@ TFMT_API Modifier operator|(Modifier const& rhs, Modifier const& lhs);
 TFMT_API Modifier operator|(Modifier&& rhs, Modifier const& lhs);
 
 /// Push a modifier to \p ostream .
-/// \details \p pushModifier() and \p popModifier() associate objects of type \p std::basic_ostream<...> with a stack of modifiers. Stacks are destroyed with destruction of the ostream object.
-template <typename CharT>
-TFMT_API void pushModifier(Modifier mod, std::basic_ostream<CharT>& ostream);
+/// \details \p pushModifier() and \p popModifier() associate objects of type \p std::basic_ostream<...> with a stack
+/// of modifiers. Stacks are destroyed with destruction of the ostream object.
+template <typename CharT, typename Traits>
+TFMT_API void pushModifier(Modifier mod, std::basic_ostream<CharT, Traits>& ostream);
 
 /// \overload
 /// Push modifier to stdout.
 TFMT_API void pushModifier(Modifier);
 
 /// Pop a modifier from \p ostream .
-template <typename CharT>
-TFMT_API void popModifier(std::basic_ostream<CharT>& ostream);
+template <typename CharT, typename Traits>
+TFMT_API void popModifier(std::basic_ostream<CharT, Traits>& ostream);
 
 /// \overload
 /// Pop modifier from stdout.
@@ -86,11 +91,11 @@ public:
     
     FormatGuard(FormatGuard&& rhs) noexcept;
     
+    /// Move assign \p rhs to \p *this . \p pop() will be called on \p *this and \p rhs will be empty after the call. 
     FormatGuard& operator=(FormatGuard&& rhs) noexcept;
     
     ~FormatGuard();
     
-private:
     void pop();
     
 private:
@@ -102,8 +107,8 @@ FormatGuard(Modifier) -> FormatGuard<std::ostream>;
 /// Execute \p fn with modifiers applied.
 /// \details Push \p mod to a stack of modifiers applied applied to \p ostream and execute \p fn .
 /// \details After execution of \p fn the modifier \p mod will be popped from the stack.
-template <typename CharT>
-TFMT_API void format(Modifier mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn);
+template <typename CharT, typename Traits>
+TFMT_API void format(Modifier mod, std::basic_ostream<CharT, Traits>& ostream, std::invocable auto&& fn);
 
 /// \overload
 /// Execute \p fn with modifiers applied to \p stdout
@@ -117,8 +122,8 @@ TFMT_API internal::ObjectWrapper<T...> format(Modifier mod, T const&... objects)
 
 /// Wrap \p ostream with the modifier \p mod
 /// \details On every insertion into the return object, \p mod will be applied.
-template <typename CharT>
-TFMT_API internal::OStreamWrapper<CharT> format(Modifier mod, std::basic_ostream<CharT>& ostream);
+template <typename CharT, typename Traits>
+TFMT_API internal::OStreamWrapper<CharT, Traits> format(Modifier mod, std::basic_ostream<CharT, Traits>& ostream);
 
 /// Reset all currently applied ANSI format codes.
 /// This should not be used directly. Prefer using the \p format(...) wrapper functions above.
@@ -177,8 +182,10 @@ class tfmt::internal::ModBase {
 public:
     explicit ModBase(std::string_view mod): buffer(mod) {}
     
-    template <typename CharT>
-    friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& ostream, ModBase const& mod) {
+    template <typename CharT, typename Traits>
+    friend std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& ostream,
+                                                         ModBase const& mod)
+    {
         if (!isFormattable(ostream)) { return ostream; }
         for (char const c: mod.buffer) {
             ostream.put(ostream.widen(c));
@@ -220,8 +227,7 @@ tfmt::FormatGuard<OStream>::FormatGuard(FormatGuard&& rhs) noexcept: ostream(rhs
 template <typename OStream>
 tfmt::FormatGuard<OStream>& tfmt::FormatGuard<OStream>::operator=(FormatGuard&& rhs) noexcept {
     pop();
-    ostream = rhs.ostream;
-    rhs.ostream = nullptr;
+    std::swap(ostream, rhs.ostream);
 }
 
 template <typename OStream>
@@ -233,10 +239,11 @@ template <typename OStream>
 void tfmt::FormatGuard<OStream>::pop() {
     if (ostream == nullptr) { return; }
     popModifier(*ostream);
+    ostream = nullptr;
 }
 
-template <typename CharT>
-void tfmt::format(Modifier mod, std::basic_ostream<CharT>& ostream, std::invocable auto&& fn) {
+template <typename CharT, typename Traits>
+void tfmt::format(Modifier mod, std::basic_ostream<CharT, Traits>& ostream, std::invocable auto&& fn) {
     FormatGuard fmt(std::move(mod), ostream);
     std::invoke(fn);
 }
@@ -253,8 +260,10 @@ public:
     
     ObjectWrapper(ObjectWrapper const&) = delete;
     
-    template <typename CharT> requires (... && Printable<T, CharT>)
-    friend std::basic_ostream<CharT>& operator<<(std::basic_ostream<CharT>& ostream, ObjectWrapper const& wrapper) {
+    template <typename CharT, typename Traits> requires (... && Printable<T, CharT, Traits>)
+    friend std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& ostream,
+                                                         ObjectWrapper const& wrapper)
+    {
         FormatGuard fmt(wrapper.mod, ostream);
         [&]<std::size_t... I>(std::index_sequence<I...>) {
             ((ostream << std::get<I>(wrapper.objects)), ...);
@@ -272,41 +281,47 @@ tfmt::internal::ObjectWrapper<T...> tfmt::format(Modifier mod, T const&... objec
     return internal::ObjectWrapper<T...>(std::move(mod), objects...);
 }
 
-template <typename CharT>
+template <typename CharT, typename Traits>
 class tfmt::internal::OStreamWrapper {
 public:
-    explicit OStreamWrapper(Modifier mod, std::basic_ostream<CharT>& ostream): mod(std::move(mod)), ostream(ostream) {}
+    explicit OStreamWrapper(Modifier mod, std::basic_ostream<CharT, Traits>& ostream):
+        mod(std::move(mod)), ostream(ostream) {}
   
-    template <Printable<CharT> T>
-    friend OStreamWrapper<CharT>& operator<<(OStreamWrapper<CharT>& wrapper, T const& object) {
+    template <Printable<CharT, Traits> T>
+    friend OStreamWrapper<CharT, Traits>& operator<<(OStreamWrapper<CharT, Traits>& wrapper, T const& object) {
         FormatGuard fmt(wrapper.mod, wrapper.ostream);
         wrapper.ostream << object;
         return wrapper;
     }
     
-    template <Printable<CharT> T>
-    friend OStreamWrapper<CharT>& operator<<(OStreamWrapper<CharT>&& wrapper, T const& object) {
-        return static_cast<OStreamWrapper<CharT>&>(wrapper) << object;
+    template <Printable<CharT, Traits> T>
+    friend OStreamWrapper<CharT, Traits>& operator<<(OStreamWrapper<CharT, Traits>&& wrapper, T const& object) {
+        return static_cast<OStreamWrapper<CharT, Traits>&>(wrapper) << object;
     }
     
-    friend OStreamWrapper<CharT>& operator<<(OStreamWrapper<CharT>& wrapper, std::basic_ostream<CharT>&(&modifier)(std::basic_ostream<CharT>&)) {
+    using OStreamModifier = std::basic_ostream<CharT, Traits>&(&)(std::basic_ostream<CharT, Traits>&);
+    
+    friend OStreamWrapper<CharT, Traits>& operator<<(OStreamWrapper<CharT, Traits>& wrapper,
+                                                     OStreamModifier modifier)
+    {
         modifier(wrapper.ostream);
         return wrapper;
     }
     
-    friend OStreamWrapper<CharT>& operator<<(OStreamWrapper<CharT>&& wrapper, std::basic_ostream<CharT>&(&modifier)(std::basic_ostream<CharT>&)) {
-        modifier(wrapper.ostream);
-        return wrapper;
+    friend OStreamWrapper<CharT, Traits>& operator<<(OStreamWrapper<CharT, Traits>&& wrapper,
+                                                     OStreamModifier modifier)
+    {
+        return static_cast<OStreamWrapper<CharT, Traits>&>(wrapper) << modifier;
     }
     
 private:
     Modifier mod;
-    std::basic_ostream<CharT>& ostream;
+    std::basic_ostream<CharT, Traits>& ostream;
 };
 
-template <typename CharT>
-tfmt::internal::OStreamWrapper<CharT> tfmt::format(Modifier mod, std::basic_ostream<CharT>& ostream) {
-    return internal::OStreamWrapper<CharT>(std::move(mod), ostream);
+template <typename CharT, typename Traits>
+tfmt::internal::OStreamWrapper<CharT, Traits> tfmt::format(Modifier mod, std::basic_ostream<CharT, Traits>& ostream) {
+    return internal::OStreamWrapper<CharT, Traits>(std::move(mod), ostream);
 }
 
 #undef TFMT_API

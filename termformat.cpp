@@ -65,8 +65,8 @@ static auto tcOStreamIndex() {
     return index;
 }
 
-template <typename CharT>
-void tfmt::setFormattable(std::basic_ostream<CharT>& ostream, bool value) {
+template <typename CharT, typename Traits>
+void tfmt::setFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value) {
     static auto const index = tcOStreamIndex();
     ostream.iword(index) = value;
 }
@@ -74,12 +74,12 @@ void tfmt::setFormattable(std::basic_ostream<CharT>& ostream, bool value) {
 template void tfmt::setFormattable(std::ostream&, bool);
 template void tfmt::setFormattable(std::wostream&, bool);
 
-template <typename CharT>
-bool tfmt::isFormattable(std::basic_ostream<CharT> const& ostream) {
+template <typename CharT, typename Traits>
+bool tfmt::isFormattable(std::basic_ostream<CharT, Traits> const& ostream) {
     static auto const index = tcOStreamIndex();
     // We need to cast away constness to access .iword() method on std::ostream, as it does not provide a const overload.
     // However we take the ostream argument by const& as conceptually this query does not modify the object.
-    std::basic_ostream<CharT>& mutableOstream = const_cast<std::basic_ostream<CharT>&>(ostream);
+    std::basic_ostream<CharT, Traits>& mutableOstream = const_cast<std::basic_ostream<CharT, Traits>&>(ostream);
     return static_cast<bool>(mutableOstream.iword(index)) || isTerminal(ostream);
 }
 
@@ -97,8 +97,8 @@ public:
         mods.pop_back();
     }
     
-    template <typename CharT>
-    void apply(std::basic_ostream<CharT>& ostream) const {
+    template <typename CharT, typename Traits>
+    void apply(std::basic_ostream<CharT, Traits>& ostream) const {
         ostream << reset;
         for (Modifier mod: mods) {
             ostream << mod;
@@ -111,8 +111,8 @@ private:
 
 } // namespace
 
-template <typename CharT>
-void tfmt::pushModifier(Modifier mod, std::basic_ostream<CharT>& ostream) {
+template <typename CharT, typename Traits>
+void tfmt::pushModifier(Modifier mod, std::basic_ostream<CharT, Traits>& ostream) {
     static auto const index = tcOStreamIndex();
     auto* stackPtr = static_cast<ModStack*>(ostream.pword(index));
     if (stackPtr == nullptr) {
@@ -132,8 +132,8 @@ void tfmt::pushModifier(Modifier mod, std::basic_ostream<CharT>& ostream) {
     stack.apply(ostream);
 }
 
-template <typename CharT>
-void tfmt::popModifier(std::basic_ostream<CharT>& ostream) {
+template <typename CharT, typename Traits>
+void tfmt::popModifier(std::basic_ostream<CharT, Traits>& ostream) {
     static auto const index = tcOStreamIndex();
     auto* const stackPtr = static_cast<ModStack*>(ostream.pword(index));
     assert(stackPtr != nullptr && "popModifier called without a prior call to pushModifier()?");
