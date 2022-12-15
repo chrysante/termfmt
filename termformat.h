@@ -258,8 +258,6 @@ class tfmt::internal::ObjectWrapper {
 public:
     explicit ObjectWrapper(Modifier mod, T const&... objects): mod(std::move(mod)), objects(objects...) {}
     
-    ObjectWrapper(ObjectWrapper const&) = delete;
-    
     template <typename CharT, typename Traits> requires (... && Printable<T, CharT, Traits>)
     friend std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& ostream,
                                                          ObjectWrapper const& wrapper)
