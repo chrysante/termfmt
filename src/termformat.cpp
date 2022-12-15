@@ -1,4 +1,4 @@
-#include "termformat.h"
+#include "termfmt/termfmt.h"
 
 #include <iostream>
 #include <new>

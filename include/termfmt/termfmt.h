@@ -231,7 +231,7 @@ tfmt::FormatGuard<OStream>& tfmt::FormatGuard<OStream>::operator=(FormatGuard&& 
 }
 
 template <typename OStream>
-tfmt::FormatGuard<OStream>::~FormatGuard() {
+tfmt::FormatGuard<OStream>::~FormatGuard<OStream>() {
     pop();
 }
 
