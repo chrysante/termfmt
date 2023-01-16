@@ -236,7 +236,7 @@ extern Modifier const tfmt::green           { "\033[32m",  "ForestGreen"  };
 extern Modifier const tfmt::yellow          { "\033[33m",  "DarkKhaki"  };
 extern Modifier const tfmt::blue            { "\033[34m",  "RoyalBlue"  };
 extern Modifier const tfmt::magenta         { "\033[35m",  "MediumVioletRed"  };
-extern Modifier const tfmt::cyan            { "\033[36m",  "Turquoise"  };
+extern Modifier const tfmt::cyan            { "\033[36m",  "DarkTurquoise"  };
 extern Modifier const tfmt::white           { "\033[37m",  ""  };
 
 extern Modifier const tfmt::brightGrey      { "\033[90m",  "LightSlateGray"  };
@@ -245,7 +245,7 @@ extern Modifier const tfmt::brightGreen     { "\033[92m",  "MediumSeaGreen"  };
 extern Modifier const tfmt::brightYellow    { "\033[93m",  "Khaki"  };
 extern Modifier const tfmt::brightBlue      { "\033[94m",  "CornflowerBlue"  };
 extern Modifier const tfmt::brightMagenta   { "\033[95m",  "DeepPink"  };
-extern Modifier const tfmt::brightCyan      { "\033[96m",  "Aquamarine"  };
+extern Modifier const tfmt::brightCyan      { "\033[96m",  "MediumTurquoise"  };
 extern Modifier const tfmt::brightWhite     { "\033[97m",  ""  };
 
 extern Modifier const tfmt::bgGrey          { "\033[40m",  ""  };
