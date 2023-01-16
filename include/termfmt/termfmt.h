@@ -6,6 +6,7 @@
 #include <tuple>
 #include <type_traits>
 #include <string>
+#include <vector>
 
 // Forward declarations
 // Public interface follows.
@@ -44,16 +45,25 @@ namespace tfmt {
 template <typename CharT, typename Traits>
 TFMT_API bool isTerminal(std::basic_ostream<CharT, Traits> const& ostream);
 
-/// Set or unset \p ostream to be formattable.
-/// \details This can be used to force emission of format codes into \p std::ostream objects which are not determined
+/// Set or unset \p ostream to be formattable with ANSI format codes.
+/// \details This can be used to force emission of ANSI format codes into \p std::ostream objects which are not determined
 /// to be terminals by \p tfmt::isTerminal()
 template <typename CharT, typename Traits>
-TFMT_API void setFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value = true);
+TFMT_API void setTermFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value = true);
 
-/// Query wether \p ostream has been marked formattable with a call to \p setFormattable() or is a terminal as
+/// Query wether \p ostream has been marked formattable with ANSI format codes with a call to \p setTermFormattable() or is a terminal as
 /// determined by \p tfmt::isTerminal()
 template <typename CharT, typename Traits>
-TFMT_API bool isFormattable(std::basic_ostream<CharT, Traits> const& ostream);
+TFMT_API bool isTermFormattable(std::basic_ostream<CharT, Traits> const& ostream);
+
+/// Set or unset \p ostream to be formattable with HTML format codes.
+/// \details This can be used to force emission of HTML format codes into \p std::ostream objects.
+template <typename CharT, typename Traits>
+TFMT_API void setHTMLFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value = true);
+
+/// Query wether \p ostream has been marked HTML formattable with a call to \p setHTMLFormattable()
+template <typename CharT, typename Traits>
+TFMT_API bool isHTMLFormattable(std::basic_ostream<CharT, Traits> const& ostream);
 
 /// Combine modifiers \p lhs and \p rhs
 TFMT_API Modifier operator|(Modifier const& rhs, Modifier const& lhs);
@@ -118,7 +128,7 @@ TFMT_API void format(Modifier mod, std::invocable auto&& fn);
 /// \details Use with \p operator<<(std::ostream&,...) :
 /// \details \p mod will be applied to the \p std::ostream object, \p objects... will be inserted and \p mod will be undone.
 template <typename... T>
-TFMT_API internal::ObjectWrapper<T...> format(Modifier mod, T const&... objects);
+TFMT_API internal::ObjectWrapper<T...> format(Modifier mod, T&&... objects);
 
 /// Wrap \p ostream with the modifier \p mod
 /// \details On every insertion into the return object, \p mod will be applied.
@@ -128,6 +138,8 @@ TFMT_API internal::OStreamWrapper<CharT, Traits> format(Modifier mod, std::basic
 /// Reset all currently applied ANSI format codes.
 /// This should not be used directly. Prefer using the \p format(...) wrapper functions above.
 extern internal::ModBase const reset;
+
+extern Modifier const none;
 
 extern Modifier const bold;
 extern Modifier const italic;
@@ -180,21 +192,29 @@ extern Modifier const bgBrightWhite;
 
 class tfmt::internal::ModBase {
 public:
-    explicit ModBase(std::string_view mod): buffer(mod) {}
+    enum class ResetTag{};
+    
+public:
+    explicit ModBase(std::string_view ansiMod, ResetTag): ansiBuffer(ansiMod), isReset(true) {}
+    explicit ModBase(std::string_view ansiMod, std::string htmlMod): ModBase(ansiMod, std::vector{ htmlMod }) {}
+    explicit ModBase(std::string_view ansiMod, std::vector<std::string> htmlMod): ansiBuffer(ansiMod), htmlBuffer(htmlMod) {}
     
     template <typename CharT, typename Traits>
     friend std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& ostream,
                                                          ModBase const& mod)
     {
-        if (!isFormattable(ostream)) { return ostream; }
-        for (char const c: mod.buffer) {
-            ostream.put(ostream.widen(c));
-        }
+        mod.put(ostream);
         return ostream;
     }
     
+private:
+    template <typename CharT, typename Traits>
+    void put(std::basic_ostream<CharT, Traits>& ostream) const;
+    
 protected:
-    std::string buffer;
+    std::string ansiBuffer;
+    std::vector<std::string> htmlBuffer;
+    bool isReset = false;
 };
 
 class tfmt::Modifier: public internal::ModBase {
@@ -206,12 +226,15 @@ public:
 };
 
 inline tfmt::Modifier tfmt::operator|(Modifier const& lhs, Modifier const& rhs) {
-    return Modifier(lhs.buffer + rhs.buffer);
+    auto htmlBuffer = lhs.htmlBuffer;
+    htmlBuffer.insert(htmlBuffer.end(), rhs.htmlBuffer.begin(), rhs.htmlBuffer.end());
+    return Modifier(lhs.ansiBuffer + rhs.ansiBuffer, std::move(htmlBuffer));
 }
 
 inline tfmt::Modifier tfmt::operator|(Modifier&& lhs, Modifier const& rhs) {
-    lhs.buffer += rhs.buffer;
-    return Modifier(std::move(lhs.buffer));
+    lhs.ansiBuffer += rhs.ansiBuffer;
+    lhs.htmlBuffer.insert(lhs.htmlBuffer.end(), rhs.htmlBuffer.begin(), rhs.htmlBuffer.end());
+    return lhs;
 }
 
 template <typename OStream>
@@ -256,7 +279,7 @@ void tfmt::format(Modifier mod, std::invocable auto&& fn) {
 template <typename... T>
 class tfmt::internal::ObjectWrapper {
 public:
-    explicit ObjectWrapper(Modifier mod, T const&... objects): mod(std::move(mod)), objects(objects...) {}
+    explicit ObjectWrapper(Modifier mod, T&&... objects): mod(std::move(mod)), objects(std::forward<T>(objects)...) {}
     
     template <typename CharT, typename Traits> requires (... && Printable<T, CharT, Traits>)
     friend std::basic_ostream<CharT, Traits>& operator<<(std::basic_ostream<CharT, Traits>& ostream,
@@ -271,12 +294,12 @@ public:
     
 private:
     Modifier mod;
-    std::tuple<T const&...> objects;
+    std::tuple<std::decay_t<T>...> objects;
 };
 
 template <typename... T>
-tfmt::internal::ObjectWrapper<T...> tfmt::format(Modifier mod, T const&... objects) {
-    return internal::ObjectWrapper<T...>(std::move(mod), objects...);
+tfmt::internal::ObjectWrapper<T...> tfmt::format(Modifier mod, T&&... objects) {
+    return internal::ObjectWrapper<T...>(std::move(mod), std::forward<T>(objects)...);
 }
 
 template <typename CharT, typename Traits>

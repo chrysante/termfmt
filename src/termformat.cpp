@@ -65,23 +65,72 @@ static auto tcOStreamIndex() {
     return index;
 }
 
-template <typename CharT, typename Traits>
-void tfmt::setFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value) {
+static long& iword(std::ios_base& ios) {
     static auto const index = tcOStreamIndex();
-    ostream.iword(index) = value;
+    return ios.iword(index);
 }
 
-template void tfmt::setFormattable(std::ostream&, bool);
-template void tfmt::setFormattable(std::wostream&, bool);
+static long iword(std::ios_base const& ios) {
+    static auto const index = tcOStreamIndex();
+    // We need to cast away constness to access .iword() method on std::ios_base, as it does not provide a const overload.
+    // However we take the argument by const& as conceptually this query does not modify the object.
+    std::ios_base& mutIos = const_cast<std::ios_base&>(ios);
+    return mutIos.iword(index);
+}
+
+static constexpr size_t terminalBit = 0;
+static constexpr size_t htmlBit = 1;
 
 template <typename CharT, typename Traits>
-bool tfmt::isFormattable(std::basic_ostream<CharT, Traits> const& ostream) {
-    static auto const index = tcOStreamIndex();
-    // We need to cast away constness to access .iword() method on std::ostream, as it does not provide a const overload.
-    // However we take the ostream argument by const& as conceptually this query does not modify the object.
-    std::basic_ostream<CharT, Traits>& mutableOstream = const_cast<std::basic_ostream<CharT, Traits>&>(ostream);
-    return static_cast<bool>(mutableOstream.iword(index)) || isTerminal(ostream);
+void tfmt::setTermFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value) {
+    iword(ostream) |= value << terminalBit;
 }
+
+template void tfmt::setTermFormattable(std::ostream&, bool);
+template void tfmt::setTermFormattable(std::wostream&, bool);
+
+template <typename CharT, typename Traits>
+bool tfmt::isTermFormattable(std::basic_ostream<CharT, Traits> const& ostream) {
+    return !!(iword(ostream) & 1 << terminalBit) || isTerminal(ostream);
+}
+
+template <typename CharT, typename Traits>
+void tfmt::setHTMLFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value) {
+    iword(ostream) |= value << htmlBit;
+}
+
+template void tfmt::setHTMLFormattable(std::ostream&, bool);
+template void tfmt::setHTMLFormattable(std::wostream&, bool);
+
+template <typename CharT, typename Traits>
+bool tfmt::isHTMLFormattable(std::basic_ostream<CharT, Traits> const& ostream) {
+    return !!(iword(ostream) & 1 << htmlBit);
+}
+
+
+template <typename CharT, typename Traits>
+static void putString(std::basic_ostream<CharT, Traits>& ostream, std::string_view str) {
+    for (char const c: str) {
+        ostream.put(ostream.widen(c));
+    }
+}
+
+template <typename CharT, typename Traits>
+void internal::ModBase::put(std::basic_ostream<CharT, Traits>& ostream) const {
+    if (isTermFormattable(ostream)) {
+        putString(ostream, ansiBuffer);
+    }
+    if (isHTMLFormattable(ostream)) {
+        if (isReset) {
+            ostream << "</font>";
+            return;
+        }
+        ostream << "<font color=\""; putString(ostream, htmlBuffer.front()); ostream << "\">";
+    }
+}
+
+template void internal::ModBase::put(std::ostream&) const;
+template void internal::ModBase::put(std::wostream&) const;
 
 namespace {
 
@@ -99,9 +148,15 @@ public:
     
     template <typename CharT, typename Traits>
     void apply(std::basic_ostream<CharT, Traits>& ostream) const {
-        ostream << reset;
         for (Modifier mod: mods) {
             ostream << mod;
+        }
+    }
+    
+    template <typename CharT, typename Traits>
+    void reset(std::basic_ostream<CharT, Traits>& ostream) const {
+        for (Modifier mod: mods) {
+            ostream << tfmt::reset;
         }
     }
     
@@ -128,6 +183,7 @@ void tfmt::pushModifier(Modifier mod, std::basic_ostream<CharT, Traits>& ostream
         }, index);
     }
     auto& stack = *stackPtr;
+    stack.reset(ostream);
     stack.push(std::move(mod));
     stack.apply(ostream);
 }
@@ -138,6 +194,7 @@ void tfmt::popModifier(std::basic_ostream<CharT, Traits>& ostream) {
     auto* const stackPtr = static_cast<ModStack*>(ostream.pword(index));
     assert(stackPtr != nullptr && "popModifier called without a prior call to pushModifier()?");
     auto& stack = *stackPtr;
+    stack.reset(ostream);
     stack.pop();
     stack.apply(ostream);
 }
@@ -162,47 +219,49 @@ tfmt::FormatGuard<std::ostream>::FormatGuard(Modifier mod): FormatGuard(std::mov
 template <>
 tfmt::FormatGuard<std::wostream>::FormatGuard(Modifier mod): FormatGuard(std::move(mod), std::wcout) {}
 
-extern internal::ModBase const tfmt::reset  { "\033[00m"  };
+extern internal::ModBase const tfmt::reset  { "\033[00m", internal::ModBase::ResetTag{} };
 
-extern Modifier const tfmt::bold            { "\033[1m"   };
-extern Modifier const tfmt::italic          { "\033[3m"   };
-extern Modifier const tfmt::underline       { "\033[4m"   };
-extern Modifier const tfmt::blink           { "\033[5m"   };
-extern Modifier const tfmt::concealed       { "\033[8m"   };
-extern Modifier const tfmt::crossed         { "\033[9m"   };
+extern Modifier const tfmt::none            { "",          "" };
 
-extern Modifier const tfmt::grey            { "\033[30m"  };
-extern Modifier const tfmt::red             { "\033[31m"  };
-extern Modifier const tfmt::green           { "\033[32m"  };
-extern Modifier const tfmt::yellow          { "\033[33m"  };
-extern Modifier const tfmt::blue            { "\033[34m"  };
-extern Modifier const tfmt::magenta         { "\033[35m"  };
-extern Modifier const tfmt::cyan            { "\033[36m"  };
-extern Modifier const tfmt::white           { "\033[37m"  };
+extern Modifier const tfmt::bold            { "\033[1m",   ""   };
+extern Modifier const tfmt::italic          { "\033[3m",   ""   };
+extern Modifier const tfmt::underline       { "\033[4m",   ""   };
+extern Modifier const tfmt::blink           { "\033[5m",   ""   };
+extern Modifier const tfmt::concealed       { "\033[8m",   ""   };
+extern Modifier const tfmt::crossed         { "\033[9m",   ""   };
 
-extern Modifier const tfmt::brightGrey      { "\033[90m"  };
-extern Modifier const tfmt::brightRed       { "\033[91m"  };
-extern Modifier const tfmt::brightGreen     { "\033[92m"  };
-extern Modifier const tfmt::brightYellow    { "\033[93m"  };
-extern Modifier const tfmt::brightBlue      { "\033[94m"  };
-extern Modifier const tfmt::brightMagenta   { "\033[95m"  };
-extern Modifier const tfmt::brightCyan      { "\033[96m"  };
-extern Modifier const tfmt::brightWhite     { "\033[97m"  };
+extern Modifier const tfmt::grey            { "\033[30m",  "DimGray"  };
+extern Modifier const tfmt::red             { "\033[31m",  "Crimson"  };
+extern Modifier const tfmt::green           { "\033[32m",  "ForestGreen"  };
+extern Modifier const tfmt::yellow          { "\033[33m",  "DarkKhaki"  };
+extern Modifier const tfmt::blue            { "\033[34m",  "RoyalBlue"  };
+extern Modifier const tfmt::magenta         { "\033[35m",  "MediumVioletRed"  };
+extern Modifier const tfmt::cyan            { "\033[36m",  "Turquoise"  };
+extern Modifier const tfmt::white           { "\033[37m",  ""  };
 
-extern Modifier const tfmt::bgGrey          { "\033[40m"  };
-extern Modifier const tfmt::bgRed           { "\033[41m"  };
-extern Modifier const tfmt::bgGreen         { "\033[42m"  };
-extern Modifier const tfmt::bgYellow        { "\033[43m"  };
-extern Modifier const tfmt::bgBlue          { "\033[44m"  };
-extern Modifier const tfmt::bgMagenta       { "\033[45m"  };
-extern Modifier const tfmt::bgCyan          { "\033[46m"  };
-extern Modifier const tfmt::bgWhite         { "\033[47m"  };
+extern Modifier const tfmt::brightGrey      { "\033[90m",  "LightSlateGray"  };
+extern Modifier const tfmt::brightRed       { "\033[91m",  "Salmon"  };
+extern Modifier const tfmt::brightGreen     { "\033[92m",  "MediumSeaGreen"  };
+extern Modifier const tfmt::brightYellow    { "\033[93m",  "Khaki"  };
+extern Modifier const tfmt::brightBlue      { "\033[94m",  "CornflowerBlue"  };
+extern Modifier const tfmt::brightMagenta   { "\033[95m",  "DeepPink"  };
+extern Modifier const tfmt::brightCyan      { "\033[96m",  "Aquamarine"  };
+extern Modifier const tfmt::brightWhite     { "\033[97m",  ""  };
 
-extern Modifier const tfmt::bgBrightGrey    { "\033[100m" };
-extern Modifier const tfmt::bgBrightRed     { "\033[101m" };
-extern Modifier const tfmt::bgBrightGreen   { "\033[102m" };
-extern Modifier const tfmt::bgBrightYellow  { "\033[103m" };
-extern Modifier const tfmt::bgBrightBlue    { "\033[104m" };
-extern Modifier const tfmt::bgBrightMagenta { "\033[105m" };
-extern Modifier const tfmt::bgBrightCyan    { "\033[106m" };
-extern Modifier const tfmt::bgBrightWhite   { "\033[107m" };
+extern Modifier const tfmt::bgGrey          { "\033[40m",  ""  };
+extern Modifier const tfmt::bgRed           { "\033[41m",  ""  };
+extern Modifier const tfmt::bgGreen         { "\033[42m",  ""  };
+extern Modifier const tfmt::bgYellow        { "\033[43m",  ""  };
+extern Modifier const tfmt::bgBlue          { "\033[44m",  ""  };
+extern Modifier const tfmt::bgMagenta       { "\033[45m",  ""  };
+extern Modifier const tfmt::bgCyan          { "\033[46m",  ""  };
+extern Modifier const tfmt::bgWhite         { "\033[47m",  ""  };
+
+extern Modifier const tfmt::bgBrightGrey    { "\033[100m", "" };
+extern Modifier const tfmt::bgBrightRed     { "\033[101m", "" };
+extern Modifier const tfmt::bgBrightGreen   { "\033[102m", "" };
+extern Modifier const tfmt::bgBrightYellow  { "\033[103m", "" };
+extern Modifier const tfmt::bgBrightBlue    { "\033[104m", "" };
+extern Modifier const tfmt::bgBrightMagenta { "\033[105m", "" };
+extern Modifier const tfmt::bgBrightCyan    { "\033[106m", "" };
+extern Modifier const tfmt::bgBrightWhite   { "\033[107m", "" };
