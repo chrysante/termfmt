@@ -3,6 +3,7 @@
 #include <iostream>
 #include <new>
 #include <vector>
+#include <cassert>
 
 #if !defined(_WIN32) && (defined(__unix__) || defined(__unix) || (defined(__APPLE__) && defined(__MACH__)))
 #   define TFMT_UNIX 1
@@ -14,8 +15,9 @@
 
 #if TFMT_UNIX
 #   include <unistd.h>
-#elif TFMT_UNIX
-#   error No windows support yet
+#elif TFMT_WINDOWS
+// #   define NOMINMAX
+#   include <io.h>
 #endif
 
 using namespace tfmt;

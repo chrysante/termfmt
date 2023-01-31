@@ -1,3 +1,11 @@
 **.xcodeproj
 .DS_Store
 test-local.cpp
+
+.vs/
+x64/
+
+**.vcxproj
+**.vcxproj.user
+**.vcxproj.filters
+**.sln

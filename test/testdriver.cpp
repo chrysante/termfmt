@@ -1,8 +1,10 @@
+#include <cassert>
 #include <iostream>
 #include <iomanip>
 #include <sstream>
+#include <string_view>
 
-#include "termformat.h"
+#include "termfmt/termfmt.h"
 
 static void separator(int width) {
     for (int i = 0; i < width; ++i) {
@@ -44,16 +46,16 @@ static void testFormatGuard() {
 
 static void testFlagAssociation() {
     std::stringstream a;
-    tfmt::setFormattable(a);
+    tfmt::setTermFormattable(a);
     std::stringstream b = std::move(a);
-    assert(!tfmt::isFormattable(a));
-    assert(tfmt::isFormattable(b));
+    assert(!tfmt::isTermFormattable(a));
+    assert(tfmt::isTermFormattable(b));
 }
 
 static void testStackAssociation() {
     header(" Stack association ");
     std::stringstream a;
-    tfmt::setFormattable(a, tfmt::isTerminal(std::cout));
+    tfmt::setTermFormattable(a, tfmt::isTerminal(std::cout));
     tfmt::pushModifier(tfmt::red, a);
     a << "This should be red.\n";
     std::stringstream b = std::move(a);
