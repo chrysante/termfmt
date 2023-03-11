@@ -46,22 +46,22 @@ template <typename CharT, typename Traits>
 TFMT_API bool isTerminal(std::basic_ostream<CharT, Traits> const& ostream);
 
 /// Set or unset \p ostream to be formattable with ANSI format codes.
-/// \details This can be used to force emission of ANSI format codes into \p std::ostream objects which are not determined
-/// to be terminals by \p tfmt::isTerminal()
+/// \details This can be used to force emission of ANSI format codes into `std::ostream` objects which are not determined
+/// to be terminals by `tfmt::isTerminal()`
 template <typename CharT, typename Traits>
 TFMT_API void setTermFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value = true);
 
-/// Query wether \p ostream has been marked formattable with ANSI format codes with a call to \p setTermFormattable() or is a terminal as
-/// determined by \p tfmt::isTerminal()
+/// Query wether \p ostream has been marked formattable with ANSI format codes with a call to `setTermFormattable()` or is a terminal as
+/// determined by `tfmt::isTerminal()`
 template <typename CharT, typename Traits>
 TFMT_API bool isTermFormattable(std::basic_ostream<CharT, Traits> const& ostream);
 
 /// Set or unset \p ostream to be formattable with HTML format codes.
-/// \details This can be used to force emission of HTML format codes into \p std::ostream objects.
+/// \details This can be used to force emission of HTML format codes into `std::ostream` objects.
 template <typename CharT, typename Traits>
 TFMT_API void setHTMLFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value = true);
 
-/// Query wether \p ostream has been marked HTML formattable with a call to \p setHTMLFormattable()
+/// Query wether \p ostream has been marked HTML formattable with a call to `setHTMLFormattable()`
 template <typename CharT, typename Traits>
 TFMT_API bool isHTMLFormattable(std::basic_ostream<CharT, Traits> const& ostream);
 
@@ -72,13 +72,13 @@ TFMT_API Modifier operator|(Modifier const& rhs, Modifier const& lhs);
 TFMT_API Modifier operator|(Modifier&& rhs, Modifier const& lhs);
 
 /// Push a modifier to \p ostream .
-/// \details \p pushModifier() and \p popModifier() associate objects of type \p std::basic_ostream<...> with a stack
+/// \details `pushModifier()` and `popModifier()` associate objects of type `std::basic_ostream<...>` with a stack
 /// of modifiers. Stacks are destroyed with destruction of the ostream object.
 template <typename CharT, typename Traits>
 TFMT_API void pushModifier(Modifier mod, std::basic_ostream<CharT, Traits>& ostream);
 
 /// \overload
-/// Push modifier to stdout.
+/// Push modifier to `stdout`.
 TFMT_API void pushModifier(Modifier);
 
 /// Pop a modifier from \p ostream .
@@ -86,7 +86,7 @@ template <typename CharT, typename Traits>
 TFMT_API void popModifier(std::basic_ostream<CharT, Traits>& ostream);
 
 /// \overload
-/// Pop modifier from stdout.
+/// Pop modifier from `stdout`.
 TFMT_API void popModifier();
 
 /// Scope guard object. Push modifier \p mod to \p ostream on construction, pop on destruction.
@@ -96,12 +96,12 @@ public:
     /// Apply \p mod to \p ostream for the lifetime of this object.
     explicit FormatGuard(Modifier mod, OStream& ostream);
     
-    /// Apply \p mod to \p stdout for the lifetime of this object.
+    /// Apply \p mod to `stdout` for the lifetime of this object.
     explicit FormatGuard(Modifier mod);
     
     FormatGuard(FormatGuard&& rhs) noexcept;
     
-    /// Move assign \p rhs to \p *this . \p pop() will be called on \p *this and \p rhs will be empty after the call. 
+    /// Move assign \p rhs to `*this` . `pop()` will be called on `*this` and \p rhs will be empty after the call.
     FormatGuard& operator=(FormatGuard&& rhs) noexcept;
     
     ~FormatGuard();
@@ -121,12 +121,12 @@ template <typename CharT, typename Traits>
 TFMT_API void format(Modifier mod, std::basic_ostream<CharT, Traits>& ostream, std::invocable auto&& fn);
 
 /// \overload
-/// Execute \p fn with modifiers applied to \p stdout
+/// Execute \p fn with modifiers applied to `stdout`
 TFMT_API void format(Modifier mod, std::invocable auto&& fn);
 
 /// Wrap a set of objects with a modifier
-/// \details Use with \p operator<<(std::ostream&,...) :
-/// \details \p mod will be applied to the \p std::ostream object, \p objects... will be inserted and \p mod will be undone.
+/// \details Use with `operator<<(std::ostream&, ...)`:
+/// \p mod will be applied to the `std::ostream` object, \p objects... will be inserted and \p mod will be undone.
 template <typename... T>
 TFMT_API internal::ObjectWrapper<T...> format(Modifier mod, T&&... objects);
 
@@ -136,7 +136,7 @@ template <typename CharT, typename Traits>
 TFMT_API internal::OStreamWrapper<CharT, Traits> format(Modifier mod, std::basic_ostream<CharT, Traits>& ostream);
 
 /// Reset all currently applied ANSI format codes.
-/// This should not be used directly. Prefer using the \p format(...) wrapper functions above.
+/// This should not be used directly. Prefer using the `format(...)` wrapper functions above.
 extern internal::ModBase const reset;
 
 extern Modifier const none;
