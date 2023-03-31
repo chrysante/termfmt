@@ -1,6 +1,7 @@
 #ifndef TERMFORMAT_H_
 #define TERMFORMAT_H_
 
+#include <functional>
 #include <concepts>
 #include <iosfwd>
 #include <tuple>
@@ -134,6 +135,15 @@ TFMT_API internal::ObjectWrapper<T...> format(Modifier mod, T&&... objects);
 /// \details On every insertion into the return object, \p mod will be applied.
 template <typename CharT, typename Traits>
 TFMT_API internal::OStreamWrapper<CharT, Traits> format(Modifier mod, std::basic_ostream<CharT, Traits>& ostream);
+
+/// Type erased class giving a unified interface for the return types of the
+/// `format(Modifier mod, T&&... objects)` functions.
+template <typename CharT, typename Traits>
+class BasicVObjectWrapper;
+
+/// Typedef of `BasicVObjectWrapper` for `CharT == char` and
+/// `Traits == std::char_traits<char>`.
+using VObjectWrapper = BasicVObjectWrapper<char, std::char_traits<char>>;
 
 /// Reset all currently applied ANSI format codes.
 /// This should not be used directly. Prefer using the `format(...)` wrapper functions above.
@@ -301,6 +311,37 @@ template <typename... T>
 tfmt::internal::ObjectWrapper<T...> tfmt::format(Modifier mod, T&&... objects) {
     return internal::ObjectWrapper<T...>(std::move(mod), std::forward<T>(objects)...);
 }
+
+template <typename CharT, typename Traits>
+class tfmt::BasicVObjectWrapper {
+    struct Tag{};
+    using OstreamT = std::basic_ostream<CharT, Traits>;
+    
+public:
+    template <typename... T>
+    BasicVObjectWrapper(internal::ObjectWrapper<T...> const& objWrapper):
+        VObjectWrapper(objWrapper, Tag{}) {}
+    
+    template <typename... T>
+    BasicVObjectWrapper(internal::ObjectWrapper<T...>&& objWrapper):
+        VObjectWrapper(std::move(objWrapper), Tag{}) {}
+    
+
+    friend std::basic_ostream<CharT, Traits>& operator<<(
+        std::basic_ostream<CharT, Traits>& ostream,
+        BasicVObjectWrapper<CharT, Traits> const& wrapper) {
+        return wrapper.impl(ostream);
+    }
+    
+private:
+    template <typename T>
+    explicit BasicVObjectWrapper(T&& objWrapper, Tag):
+        impl([ow = std::forward<T>(objWrapper)](OstreamT& str) -> OstreamT& {
+            return str << ow;
+        }) {}
+    
+    std::function<OstreamT&(OstreamT&)> impl;
+};
 
 template <typename CharT, typename Traits>
 class tfmt::internal::OStreamWrapper {
