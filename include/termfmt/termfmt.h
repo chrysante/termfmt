@@ -72,6 +72,10 @@ TFMT_API Modifier operator|(Modifier const& rhs, Modifier const& lhs);
 /// \overload
 TFMT_API Modifier operator|(Modifier&& rhs, Modifier const& lhs);
 
+/// Combine \p rhs into \p lhs
+/// \Returns A reference to \p lhs
+TFMT_API Modifier& operator|=(Modifier& rhs, Modifier const& lhs);
+
 /// Push a modifier to \p ostream .
 /// \details `pushModifier()` and `popModifier()` associate objects of type `std::basic_ostream<...>` with a stack
 /// of modifiers. Stacks are destroyed with destruction of the ostream object.
@@ -245,6 +249,10 @@ inline tfmt::Modifier tfmt::operator|(Modifier&& lhs, Modifier const& rhs) {
     lhs.ansiBuffer += rhs.ansiBuffer;
     lhs.htmlBuffer.insert(lhs.htmlBuffer.end(), rhs.htmlBuffer.begin(), rhs.htmlBuffer.end());
     return lhs;
+}
+
+inline tfmt::Modifier& tfmt::operator|=(Modifier& lhs, Modifier const& rhs) {
+    return lhs = std::move(lhs) | rhs;
 }
 
 template <typename OStream>
