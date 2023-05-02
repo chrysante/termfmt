@@ -85,7 +85,7 @@ static constexpr size_t htmlBit = 1;
 
 template <typename CharT, typename Traits>
 void tfmt::setTermFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value) {
-    iword(ostream) |= value << terminalBit;
+    iword(ostream) |= static_cast<size_t>(value) << terminalBit;
 }
 
 template void tfmt::setTermFormattable(std::ostream&, bool);
@@ -108,7 +108,6 @@ template <typename CharT, typename Traits>
 bool tfmt::isHTMLFormattable(std::basic_ostream<CharT, Traits> const& ostream) {
     return !!(iword(ostream) & 1 << htmlBit);
 }
-
 
 template <typename CharT, typename Traits>
 static void putString(std::basic_ostream<CharT, Traits>& ostream, std::string_view str) {
