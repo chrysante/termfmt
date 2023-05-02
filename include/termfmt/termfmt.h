@@ -151,52 +151,52 @@ using VObjectWrapper = BasicVObjectWrapper<char, std::char_traits<char>>;
 
 /// Reset all currently applied ANSI format codes.
 /// This should not be used directly. Prefer using the `format(...)` wrapper functions above.
-extern internal::ModBase const reset;
+extern internal::ModBase const Reset;
 
-extern Modifier const none;
+extern Modifier const None;
 
-extern Modifier const bold;
-extern Modifier const italic;
-extern Modifier const underline;
-extern Modifier const blink;
-extern Modifier const concealed;
-extern Modifier const crossed;
+extern Modifier const Bold;
+extern Modifier const Italic;
+extern Modifier const Underline;
+extern Modifier const Blink;
+extern Modifier const Concealed;
+extern Modifier const Crossed;
 
-extern Modifier const grey;
-extern Modifier const red;
-extern Modifier const green;
-extern Modifier const yellow;
-extern Modifier const blue;
-extern Modifier const magenta;
-extern Modifier const cyan;
-extern Modifier const white;
+extern Modifier const Grey;
+extern Modifier const Red;
+extern Modifier const Green;
+extern Modifier const Yellow;
+extern Modifier const Blue;
+extern Modifier const Magenta;
+extern Modifier const Cyan;
+extern Modifier const White;
 
-extern Modifier const brightGrey;
-extern Modifier const brightRed;
-extern Modifier const brightGreen;
-extern Modifier const brightYellow;
-extern Modifier const brightBlue;
-extern Modifier const brightMagenta;
-extern Modifier const brightCyan;
-extern Modifier const brightWhite;
+extern Modifier const BrightGrey;
+extern Modifier const BrightRed;
+extern Modifier const BrightGreen;
+extern Modifier const BrightYellow;
+extern Modifier const BrightBlue;
+extern Modifier const BrightMagenta;
+extern Modifier const BrightCyan;
+extern Modifier const BrightWhite;
 
-extern Modifier const bgGrey;
-extern Modifier const bgRed;
-extern Modifier const bgGreen;
-extern Modifier const bgYellow;
-extern Modifier const bgBlue;
-extern Modifier const bgMagenta;
-extern Modifier const bgCyan;
-extern Modifier const bgWhite;
+extern Modifier const BGGrey;
+extern Modifier const BGRed;
+extern Modifier const BGGreen;
+extern Modifier const BGYellow;
+extern Modifier const BGBlue;
+extern Modifier const BGMagenta;
+extern Modifier const BGCyan;
+extern Modifier const BGWhite;
 
-extern Modifier const bgBrightGrey;
-extern Modifier const bgBrightRed;
-extern Modifier const bgBrightGreen;
-extern Modifier const bgBrightYellow;
-extern Modifier const bgBrightBlue;
-extern Modifier const bgBrightMagenta;
-extern Modifier const bgBrightCyan;
-extern Modifier const bgBrightWhite;
+extern Modifier const BGBrightGrey;
+extern Modifier const BGBrightRed;
+extern Modifier const BGBrightGreen;
+extern Modifier const BGBrightYellow;
+extern Modifier const BGBrightBlue;
+extern Modifier const BGBrightMagenta;
+extern Modifier const BGBrightCyan;
+extern Modifier const BGBrightWhite;
 
 } // namespace tfmt
 

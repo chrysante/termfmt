@@ -158,7 +158,7 @@ public:
     template <typename CharT, typename Traits>
     void reset(std::basic_ostream<CharT, Traits>& ostream) const {
         for (Modifier mod: mods) {
-            ostream << tfmt::reset;
+            ostream << tfmt::Reset;
         }
     }
     
@@ -221,49 +221,49 @@ tfmt::FormatGuard<std::ostream>::FormatGuard(Modifier mod): FormatGuard(std::mov
 template <>
 tfmt::FormatGuard<std::wostream>::FormatGuard(Modifier mod): FormatGuard(std::move(mod), std::wcout) {}
 
-extern internal::ModBase const tfmt::reset  { "\033[00m", internal::ModBase::ResetTag{} };
+extern internal::ModBase const tfmt::Reset  { "\033[00m", internal::ModBase::ResetTag{} };
 
-extern Modifier const tfmt::none            { "",          "" };
+extern Modifier const tfmt::None            { "",          "" };
 
-extern Modifier const tfmt::bold            { "\033[1m",   ""   };
-extern Modifier const tfmt::italic          { "\033[3m",   ""   };
-extern Modifier const tfmt::underline       { "\033[4m",   ""   };
-extern Modifier const tfmt::blink           { "\033[5m",   ""   };
-extern Modifier const tfmt::concealed       { "\033[8m",   ""   };
-extern Modifier const tfmt::crossed         { "\033[9m",   ""   };
+extern Modifier const tfmt::Bold            { "\033[1m",   ""   };
+extern Modifier const tfmt::Italic          { "\033[3m",   ""   };
+extern Modifier const tfmt::Underline       { "\033[4m",   ""   };
+extern Modifier const tfmt::Blink           { "\033[5m",   ""   };
+extern Modifier const tfmt::Concealed       { "\033[8m",   ""   };
+extern Modifier const tfmt::Crossed         { "\033[9m",   ""   };
 
-extern Modifier const tfmt::grey            { "\033[30m",  "DimGray"  };
-extern Modifier const tfmt::red             { "\033[31m",  "Crimson"  };
-extern Modifier const tfmt::green           { "\033[32m",  "ForestGreen"  };
-extern Modifier const tfmt::yellow          { "\033[33m",  "DarkKhaki"  };
-extern Modifier const tfmt::blue            { "\033[34m",  "RoyalBlue"  };
-extern Modifier const tfmt::magenta         { "\033[35m",  "MediumVioletRed"  };
-extern Modifier const tfmt::cyan            { "\033[36m",  "DarkTurquoise"  };
-extern Modifier const tfmt::white           { "\033[37m",  ""  };
+extern Modifier const tfmt::Grey            { "\033[30m",  "DimGray"  };
+extern Modifier const tfmt::Red             { "\033[31m",  "Crimson"  };
+extern Modifier const tfmt::Green           { "\033[32m",  "ForestGreen"  };
+extern Modifier const tfmt::Yellow          { "\033[33m",  "DarkKhaki"  };
+extern Modifier const tfmt::Blue            { "\033[34m",  "RoyalBlue"  };
+extern Modifier const tfmt::Magenta         { "\033[35m",  "MediumVioletRed"  };
+extern Modifier const tfmt::Cyan            { "\033[36m",  "DarkTurquoise"  };
+extern Modifier const tfmt::White           { "\033[37m",  ""  };
 
-extern Modifier const tfmt::brightGrey      { "\033[90m",  "LightSlateGray"  };
-extern Modifier const tfmt::brightRed       { "\033[91m",  "Salmon"  };
-extern Modifier const tfmt::brightGreen     { "\033[92m",  "MediumSeaGreen"  };
-extern Modifier const tfmt::brightYellow    { "\033[93m",  "Khaki"  };
-extern Modifier const tfmt::brightBlue      { "\033[94m",  "CornflowerBlue"  };
-extern Modifier const tfmt::brightMagenta   { "\033[95m",  "DeepPink"  };
-extern Modifier const tfmt::brightCyan      { "\033[96m",  "MediumTurquoise"  };
-extern Modifier const tfmt::brightWhite     { "\033[97m",  ""  };
+extern Modifier const tfmt::BrightGrey      { "\033[90m",  "LightSlateGray"  };
+extern Modifier const tfmt::BrightRed       { "\033[91m",  "Salmon"  };
+extern Modifier const tfmt::BrightGreen     { "\033[92m",  "MediumSeaGreen"  };
+extern Modifier const tfmt::BrightYellow    { "\033[93m",  "Khaki"  };
+extern Modifier const tfmt::BrightBlue      { "\033[94m",  "CornflowerBlue"  };
+extern Modifier const tfmt::BrightMagenta   { "\033[95m",  "DeepPink"  };
+extern Modifier const tfmt::BrightCyan      { "\033[96m",  "MediumTurquoise"  };
+extern Modifier const tfmt::BrightWhite     { "\033[97m",  ""  };
 
-extern Modifier const tfmt::bgGrey          { "\033[40m",  ""  };
-extern Modifier const tfmt::bgRed           { "\033[41m",  ""  };
-extern Modifier const tfmt::bgGreen         { "\033[42m",  ""  };
-extern Modifier const tfmt::bgYellow        { "\033[43m",  ""  };
-extern Modifier const tfmt::bgBlue          { "\033[44m",  ""  };
-extern Modifier const tfmt::bgMagenta       { "\033[45m",  ""  };
-extern Modifier const tfmt::bgCyan          { "\033[46m",  ""  };
-extern Modifier const tfmt::bgWhite         { "\033[47m",  ""  };
+extern Modifier const tfmt::BGGrey          { "\033[40m",  ""  };
+extern Modifier const tfmt::BGRed           { "\033[41m",  ""  };
+extern Modifier const tfmt::BGGreen         { "\033[42m",  ""  };
+extern Modifier const tfmt::BGYellow        { "\033[43m",  ""  };
+extern Modifier const tfmt::BGBlue          { "\033[44m",  ""  };
+extern Modifier const tfmt::BGMagenta       { "\033[45m",  ""  };
+extern Modifier const tfmt::BGCyan          { "\033[46m",  ""  };
+extern Modifier const tfmt::BGWhite         { "\033[47m",  ""  };
 
-extern Modifier const tfmt::bgBrightGrey    { "\033[100m", "" };
-extern Modifier const tfmt::bgBrightRed     { "\033[101m", "" };
-extern Modifier const tfmt::bgBrightGreen   { "\033[102m", "" };
-extern Modifier const tfmt::bgBrightYellow  { "\033[103m", "" };
-extern Modifier const tfmt::bgBrightBlue    { "\033[104m", "" };
-extern Modifier const tfmt::bgBrightMagenta { "\033[105m", "" };
-extern Modifier const tfmt::bgBrightCyan    { "\033[106m", "" };
-extern Modifier const tfmt::bgBrightWhite   { "\033[107m", "" };
+extern Modifier const tfmt::BGBrightGrey    { "\033[100m", "" };
+extern Modifier const tfmt::BGBrightRed     { "\033[101m", "" };
+extern Modifier const tfmt::BGBrightGreen   { "\033[102m", "" };
+extern Modifier const tfmt::BGBrightYellow  { "\033[103m", "" };
+extern Modifier const tfmt::BGBrightBlue    { "\033[104m", "" };
+extern Modifier const tfmt::BGBrightMagenta { "\033[105m", "" };
+extern Modifier const tfmt::BGBrightCyan    { "\033[106m", "" };
+extern Modifier const tfmt::BGBrightWhite   { "\033[107m", "" };
