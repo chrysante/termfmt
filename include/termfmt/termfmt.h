@@ -20,8 +20,7 @@ class Modifier;
 
 } // namespace tfmt
 
-namespace tfmt {
-namespace internal {
+namespace tfmt::internal {
 
 class ModBase;
 template <typename... T>
@@ -34,7 +33,7 @@ concept Printable = requires(std::basic_ostream<CharT, Traits>& ostream, T const
     { ostream << t } -> std::convertible_to<std::basic_ostream<CharT, Traits>&>;
 };
 
-}} // namespace tfmt::internal
+} // namespace tfmt::internal
 
 // ===------------------------------------------------------===
 // === Public interface ------------------------------------===
