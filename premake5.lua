@@ -1,10 +1,14 @@
-project "termfmt"
+workspace "termfmt"
+configurations { "Debug", "Release" }
+cppdialect "C++20"
 
-kind "StaticLib"
-
-files{ 
-    "include/termfmt/**.h", 
-    "src/**.cpp" 
+project "test"
+kind "ConsoleApp"
+externalincludedirs "include"
+files { 
+    "test/**.h",
+    "test/**.cpp"
 }
+links "termfmt"
 
-includedirs "include"
+include "lib.lua"

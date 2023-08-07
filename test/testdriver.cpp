@@ -27,18 +27,18 @@ static void header(std::string_view text) {
 
 static void testRaw() {
     header(" Raw ");
-    std::cout << tfmt::red << "This should be red.\n";
-    std::cout << tfmt::bgBlue << "This should be red on blue background.\n" << tfmt::reset;
+    std::cout << tfmt::Red << "This should be red.\n";
+    std::cout << tfmt::BGBlue << "This should be red on blue background.\n" << tfmt::Reset;
 }
 
 static void testFormatGuard() {
     header(" FormatGuard ");
-    tfmt::FormatGuard underline(tfmt::underline);
+    tfmt::FormatGuard underline(tfmt::Underline);
     std::cout << "This entire section should be underlined.\n";
     {
-        tfmt::FormatGuard italic(tfmt::italic);
+        tfmt::FormatGuard italic(tfmt::Italic);
         std::cout << "This line should also be italic.\n";
-        tfmt::FormatGuard cyanBold(tfmt::cyan | tfmt::bold);
+        tfmt::FormatGuard cyanBold(tfmt::Cyan | tfmt::Bold);
         std::cout << "This line should also be bold and cyan.\n";
     }
     std::cout << "This should be default underlined again.\n";
@@ -56,7 +56,7 @@ static void testStackAssociation() {
     header(" Stack association ");
     std::stringstream a;
     tfmt::setTermFormattable(a, tfmt::isTerminal(std::cout));
-    tfmt::pushModifier(tfmt::red, a);
+    tfmt::pushModifier(tfmt::Red, a);
     a << "This should be red.\n";
     std::stringstream b = std::move(a);
     b << "This should still be red.\n";
@@ -67,11 +67,11 @@ static void testStackAssociation() {
 
 static void testFormatCallback() {
     header(" Format with callback ");
-    tfmt::format(tfmt::red, [&]{
+    tfmt::format(tfmt::Red, [&]{
         std::cout << "This should be red and also ";
-        tfmt::format(tfmt::underline, [&]{
+        tfmt::format(tfmt::Underline, [&]{
             std::cout << "underlined";
-            tfmt::format(tfmt::italic, [&]{
+            tfmt::format(tfmt::Italic, [&]{
                 std::cout << " and now also italic.\n";
             });
         });

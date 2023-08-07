@@ -1,6 +1,9 @@
 **.xcodeproj
+**.xcworkspace
 .DS_Store
 test-local.cpp
+
+bin/
 
 .vs/
 x64/
