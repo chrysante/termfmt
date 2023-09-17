@@ -148,6 +148,10 @@ class BasicVObjectWrapper;
 /// `Traits == std::char_traits<char>`.
 using VObjectWrapper = BasicVObjectWrapper<char, std::char_traits<char>>;
 
+/// List of all modifiers. This is in an inline namespace to use `using namespace tfmt::modifiers;` to pull all modifiers into the global scope
+
+inline namespace modifiers {
+
 /// Reset all currently applied ANSI format codes.
 /// This should not be used directly. Prefer using the `format(...)` wrapper functions above.
 extern internal::ModBase const Reset;
@@ -196,6 +200,8 @@ extern Modifier const BGBrightBlue;
 extern Modifier const BGBrightMagenta;
 extern Modifier const BGBrightCyan;
 extern Modifier const BGBrightWhite;
+
+} // inline namespace modifiers 
 
 } // namespace tfmt
 
