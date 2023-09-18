@@ -98,6 +98,9 @@ bool tfmt::isTermFormattable(std::basic_ostream<CharT, Traits> const& ostream) {
     return !!(iword(ostream) & 1 << terminalBit) || isTerminal(ostream);
 }
 
+template bool tfmt::isTermFormattable(std::ostream const&);
+template bool tfmt::isTermFormattable(std::wostream const&);
+
 template <typename CharT, typename Traits>
 void tfmt::setHTMLFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value) {
     iword(ostream) |= value << htmlBit;
@@ -110,6 +113,9 @@ template <typename CharT, typename Traits>
 bool tfmt::isHTMLFormattable(std::basic_ostream<CharT, Traits> const& ostream) {
     return !!(iword(ostream) & 1 << htmlBit);
 }
+
+template bool tfmt::isHTMLFormattable(std::ostream const&);
+template bool tfmt::isHTMLFormattable(std::wostream const&);
 
 template <typename CharT, typename Traits>
 static void putString(std::basic_ostream<CharT, Traits>& ostream, std::string_view str) {
