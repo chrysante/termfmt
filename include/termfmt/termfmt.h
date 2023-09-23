@@ -1,12 +1,13 @@
 #ifndef TERMFORMAT_H_
 #define TERMFORMAT_H_
 
-#include <functional>
 #include <concepts>
+#include <functional>
 #include <iosfwd>
+#include <optional>
+#include <string>
 #include <tuple>
 #include <type_traits>
-#include <string>
 #include <vector>
 
 // Forward declarations
@@ -44,6 +45,10 @@ namespace tfmt {
 /// Determine wether \p ostream is backed by a terminal (which supports ANSI format codes).
 template <typename CharT, typename Traits>
 TFMT_API bool isTerminal(std::basic_ostream<CharT, Traits> const& ostream);
+
+/// \Returns the available width of \p ostream if it is a terminal. Otherwise returns `std::nullopt`
+template <typename CharT, typename Traits>
+TFMT_API std::optional<size_t> getWidth(std::basic_ostream<CharT, Traits> const& ostream);
 
 /// Set or unset \p ostream to be formattable with ANSI format codes.
 /// \details This can be used to force emission of ANSI format codes into `std::ostream` objects which are not determined

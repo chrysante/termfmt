@@ -15,9 +15,12 @@
 
 #if TFMT_UNIX
 #   include <unistd.h>
+#   include <sys/ioctl.h>
+#   include <stdio.h>
 #elif TFMT_WINDOWS
 // #   define NOMINMAX
 #   include <io.h>
+#   include <windows.h>
 #endif
 
 using namespace tfmt;
@@ -27,6 +30,8 @@ static int isattyWrapper(FILE* file) {
     return isatty(fileno(file));
 #elif TFMT_WINDOWS
     return _isatty(_fileno(file));
+#else
+#   error
 #endif
 }
 
@@ -61,6 +66,31 @@ bool tfmt::isTerminal(std::wostream const& ostream) {
            isTerminalImpl(ostream, std::wcerr, stderr) ||
            isTerminalImpl(ostream, std::wclog, stderr);
 }
+
+static size_t getWidthImpl() {
+#if TFMT_UNIX
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    return w.ws_col;
+#elif TFMT_WINDOWS
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    return csbi.srWindow.Right - csbi.srWindow.Left + 1;
+#else
+#   error
+#endif
+}
+
+template <typename CharT, typename Traits>
+std::optional<size_t> tfmt::getWidth(std::basic_ostream<CharT, Traits> const& ostream) {
+    if (isTerminal(ostream)) {
+        return getWidthImpl();
+    }
+    return std::nullopt;
+}
+
+template std::optional<size_t> tfmt::getWidth(std::ostream const&);
+template std::optional<size_t> tfmt::getWidth(std::wostream const&);
 
 static auto tcOStreamIndex() {
     static auto const index = std::ios_base::xalloc();
