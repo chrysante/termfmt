@@ -148,6 +148,20 @@ template bool tfmt::isHTMLFormattable(std::ostream const&);
 template bool tfmt::isHTMLFormattable(std::wostream const&);
 
 template <typename CharT, typename Traits>
+void tfmt::copyFormatFlags(std::basic_ostream<CharT, Traits> const& source,
+                           std::basic_ostream<CharT, Traits>& dest) {
+    if (isTermFormattable(source)) {
+        setTermFormattable(dest);
+    }
+    if (isHTMLFormattable(source)) {
+        setHTMLFormattable(dest);
+    }
+}
+
+template void tfmt::copyFormatFlags(std::ostream const&, std::ostream&);
+template void tfmt::copyFormatFlags(std::wostream const&, std::wostream&);
+
+template <typename CharT, typename Traits>
 static void putString(std::basic_ostream<CharT, Traits>& ostream, std::string_view str) {
     for (char const c: str) {
         ostream.put(ostream.widen(c));

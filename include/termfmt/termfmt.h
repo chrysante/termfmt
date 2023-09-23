@@ -70,6 +70,11 @@ TFMT_API void setHTMLFormattable(std::basic_ostream<CharT, Traits>& ostream, boo
 template <typename CharT, typename Traits>
 TFMT_API bool isHTMLFormattable(std::basic_ostream<CharT, Traits> const& ostream);
 
+/// Copies all TFMT format flags from \p source to \p dest
+template <typename CharT, typename Traits>
+TFMT_API void copyFormatFlags(std::basic_ostream<CharT, Traits> const& source,
+                              std::basic_ostream<CharT, Traits>& dest);
+
 /// Combine modifiers \p lhs and \p rhs
 TFMT_API Modifier operator|(Modifier const& rhs, Modifier const& lhs);
 
