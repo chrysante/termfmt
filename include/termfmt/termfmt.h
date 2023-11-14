@@ -42,7 +42,7 @@ concept Printable = requires(std::basic_ostream<CharT, Traits>& ostream, T const
 
 namespace tfmt {
 
-/// Determine wether \p ostream is backed by a terminal (which supports ANSI format codes).
+/// Determine whether \p ostream is backed by a terminal (which supports ANSI format codes).
 template <typename CharT, typename Traits>
 TFMT_API bool isTerminal(std::basic_ostream<CharT, Traits> const& ostream);
 
@@ -56,7 +56,7 @@ TFMT_API std::optional<size_t> getWidth(std::basic_ostream<CharT, Traits> const&
 template <typename CharT, typename Traits>
 TFMT_API void setTermFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value = true);
 
-/// Query wether \p ostream has been marked formattable with ANSI format codes with a call to `setTermFormattable()` or is a terminal as
+/// Query whether \p ostream has been marked formattable with ANSI format codes with a call to `setTermFormattable()` or is a terminal as
 /// determined by `tfmt::isTerminal()`
 template <typename CharT, typename Traits>
 TFMT_API bool isTermFormattable(std::basic_ostream<CharT, Traits> const& ostream);
@@ -66,7 +66,7 @@ TFMT_API bool isTermFormattable(std::basic_ostream<CharT, Traits> const& ostream
 template <typename CharT, typename Traits>
 TFMT_API void setHTMLFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value = true);
 
-/// Query wether \p ostream has been marked HTML formattable with a call to `setHTMLFormattable()`
+/// Query whether \p ostream has been marked HTML formattable with a call to `setHTMLFormattable()`
 template <typename CharT, typename Traits>
 TFMT_API bool isHTMLFormattable(std::basic_ostream<CharT, Traits> const& ostream);
 
