@@ -67,31 +67,6 @@ bool tfmt::isTerminal(std::wostream const& ostream) {
            isTerminalImpl(ostream, std::wclog, stderr);
 }
 
-static size_t getWidthImpl() {
-#if TFMT_UNIX
-    struct winsize w;
-    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
-    return w.ws_col;
-#elif TFMT_WINDOWS
-    CONSOLE_SCREEN_BUFFER_INFO csbi;
-    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
-    return csbi.srWindow.Right - csbi.srWindow.Left + 1;
-#else
-#   error
-#endif
-}
-
-template <typename CharT, typename Traits>
-std::optional<size_t> tfmt::getWidth(std::basic_ostream<CharT, Traits> const& ostream) {
-    if (isTerminal(ostream)) {
-        return getWidthImpl();
-    }
-    return std::nullopt;
-}
-
-template std::optional<size_t> tfmt::getWidth(std::ostream const&);
-template std::optional<size_t> tfmt::getWidth(std::wostream const&);
-
 static auto tcOStreamIndex() {
     static auto const index = std::ios_base::xalloc();
     return index;
@@ -114,6 +89,47 @@ static long iword(std::ios_base const& ios) {
 
 static constexpr size_t terminalBit = 0;
 static constexpr size_t htmlBit = 1;
+static constexpr size_t widthMask = 0xFF00;
+
+static size_t getWidthImpl() {
+#if TFMT_UNIX
+    struct winsize w;
+    ioctl(STDOUT_FILENO, TIOCGWINSZ, &w);
+    return w.ws_col;
+#elif TFMT_WINDOWS
+    CONSOLE_SCREEN_BUFFER_INFO csbi;
+    GetConsoleScreenBufferInfo(GetStdHandle(STD_OUTPUT_HANDLE), &csbi);
+    return csbi.srWindow.Right - csbi.srWindow.Left + 1;
+#else
+#   error
+#endif
+}
+
+template <typename CharT, typename Traits>
+std::optional<size_t> tfmt::getWidth(std::basic_ostream<CharT, Traits> const& ostream) {
+    size_t width = (static_cast<size_t>(iword(ostream)) & widthMask) >> 8;
+    if (width > 0) {
+        return width;
+    }
+    if (isTerminal(ostream)) {
+        return getWidthImpl();
+    }
+    return std::nullopt;
+}
+
+template std::optional<size_t> tfmt::getWidth(std::ostream const&);
+template std::optional<size_t> tfmt::getWidth(std::wostream const&);
+
+template <typename CharT, typename Traits>
+void tfmt::setWidth(std::basic_ostream<CharT, Traits>& ostream, size_t width) {
+    auto& word = iword(ostream);
+    assert(width < 256 && "Cannot set width higher than 256");
+    word &= ~static_cast<long>(widthMask);
+    word |= static_cast<long>(width) << 8;
+}
+
+template void tfmt::setWidth(std::ostream&, size_t);
+template void tfmt::setWidth(std::wostream&, size_t);
 
 template <typename CharT, typename Traits>
 void tfmt::setTermFormattable(std::basic_ostream<CharT, Traits>& ostream, bool value) {

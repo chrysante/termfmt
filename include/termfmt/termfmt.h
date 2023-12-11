@@ -46,9 +46,13 @@ namespace tfmt {
 template <typename CharT, typename Traits>
 TFMT_API bool isTerminal(std::basic_ostream<CharT, Traits> const& ostream);
 
-/// \Returns the available width of \p ostream if it is a terminal. Otherwise returns `std::nullopt`
+/// \Returns the available width of \p ostream if it is a terminal or the user
+/// defined width set by `setWidth()`. Otherwise returns `std::nullopt`
 template <typename CharT, typename Traits>
 TFMT_API std::optional<size_t> getWidth(std::basic_ostream<CharT, Traits> const& ostream);
+
+template <typename CharT, typename Traits>
+TFMT_API void setWidth(std::basic_ostream<CharT, Traits>& ostream, size_t width);
 
 /// Set or unset \p ostream to be formattable with ANSI format codes.
 /// \details This can be used to force emission of ANSI format codes into `std::ostream` objects which are not determined
