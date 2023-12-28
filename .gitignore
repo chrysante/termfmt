@@ -5,6 +5,9 @@ test-local.cpp
 
 bin/
 
+Makefile
+**.make
+
 .vs/
 x64/
 

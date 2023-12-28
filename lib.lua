@@ -9,3 +9,8 @@ files{
 }
 
 includedirs "include"
+
+filter "system:linux"
+    buildoptions "-fPIC"
+filter {}
+
