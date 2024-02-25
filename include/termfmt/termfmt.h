@@ -30,12 +30,12 @@ template <typename CharT, typename Traits>
 class OStreamWrapper;
 
 template <typename T, typename CharT, typename Traits>
-concept Printable = requires(std::basic_ostream<CharT, Traits>& ostream,
-                             T const& t) {
-    {
-        ostream << t
+concept Printable =
+    requires(std::basic_ostream<CharT, Traits>& ostream, T const& t) {
+        {
+            ostream << t
         } -> std::convertible_to<std::basic_ostream<CharT, Traits>&>;
-};
+    };
 
 } // namespace tfmt::internal
 
@@ -148,7 +148,7 @@ private:
     OStream* ostream;
 };
 
-FormatGuard(Modifier)->FormatGuard<std::ostream>;
+FormatGuard(Modifier) -> FormatGuard<std::ostream>;
 
 /// Execute \p fn with modifiers applied.
 /// \details Push \p mod to a stack of modifiers applied applied to \p ostream
@@ -360,16 +360,14 @@ public:
         mod(std::move(mod)), objects(std::forward<T>(objects)...) {}
 
     template <typename CharT, typename Traits>
-    requires(
-        ...&& Printable<T, CharT, Traits>) friend std::basic_ostream<CharT,
-                                                                     Traits>&
-        operator<<(std::basic_ostream<CharT, Traits>& ostream,
-                   ObjectWrapper const& wrapper) {
+        requires(... && Printable<T, CharT, Traits>)
+    friend std::basic_ostream<CharT, Traits>& operator<<(
+        std::basic_ostream<CharT, Traits>& ostream,
+        ObjectWrapper const& wrapper) {
         FormatGuard fmt(wrapper.mod, ostream);
         [&]<std::size_t... I>(std::index_sequence<I...>) {
             ((ostream << std::get<I>(wrapper.objects)), ...);
-        }
-        (std::index_sequence_for<T...>{});
+        }(std::index_sequence_for<T...>{});
         return ostream;
     }
 
@@ -408,8 +406,8 @@ private:
     template <typename T>
     explicit BasicVObjectWrapper(T&& objWrapper, Tag):
         impl([ow = std::forward<T>(objWrapper)](OstreamT& str) -> OstreamT& {
-            return str << ow;
-        }) {}
+        return str << ow;
+    }) {}
 
     std::function<OstreamT&(OstreamT&)> impl;
 };

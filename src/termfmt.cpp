@@ -257,7 +257,7 @@ void tfmt::pushModifier(Modifier mod,
             auto* stackPtr = static_cast<ModStack*>(ios.pword(index));
             ::delete stackPtr;
             ios.pword(index) = nullptr;
-            },
+        },
             index);
     }
     auto& stack = *stackPtr;

@@ -1,6 +1,6 @@
 #include <cassert>
-#include <iostream>
 #include <iomanip>
+#include <iostream>
 #include <sstream>
 #include <string_view>
 
@@ -21,14 +21,16 @@ static void header(std::string_view text) {
     for (int i = 0; i < 10; ++i) {
         std::cout.put('=');
     }
-    std::cout << std::setw(total - left) << std::setfill('=') << std::left << text << std::endl;
+    std::cout << std::setw(total - left) << std::setfill('=') << std::left
+              << text << std::endl;
     separator(total);
 }
 
 static void testRaw() {
     header(" Raw ");
     std::cout << tfmt::Red << "This should be red.\n";
-    std::cout << tfmt::BGBlue << "This should be red on blue background.\n" << tfmt::Reset;
+    std::cout << tfmt::BGBlue << "This should be red on blue background.\n"
+              << tfmt::Reset;
 }
 
 static void testFormatGuard() {
@@ -67,13 +69,12 @@ static void testStackAssociation() {
 
 static void testFormatCallback() {
     header(" Format with callback ");
-    tfmt::format(tfmt::Red, [&]{
+    tfmt::format(tfmt::Red, [&] {
         std::cout << "This should be red and also ";
-        tfmt::format(tfmt::Underline, [&]{
+        tfmt::format(tfmt::Underline, [&] {
             std::cout << "underlined";
-            tfmt::format(tfmt::Italic, [&]{
-                std::cout << " and now also italic.\n";
-            });
+            tfmt::format(tfmt::Italic,
+                         [&] { std::cout << " and now also italic.\n"; });
         });
     });
 }
