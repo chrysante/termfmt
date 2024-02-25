@@ -10,10 +10,10 @@
 #include <type_traits>
 #include <vector>
 
+#include <termfmt/api.h>
+
 // Forward declarations
 // Public interface follows.
-
-#define TFMT_API /* Add definition here */
 
 namespace tfmt {
 
