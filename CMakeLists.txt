@@ -20,11 +20,15 @@ project(
 set(CMAKE_CXX_VISIBILITY_PRESET     hidden)
 set(CMAKE_VISIBILITY_INLINES_HIDDEN 1)
 
-add_library(termfmt)
+if(termfmt_SHARED)
+  add_library(termfmt SHARED)
+else()
+  add_library(termfmt STATIC)
+endif()
 
 include(GenerateExportHeader)
 generate_export_header(termfmt
-  EXPORT_MACRO_NAME TERMFMT_API
+  EXPORT_MACRO_NAME TFMT_API
   EXPORT_FILE_NAME include/termfmt/api.h
 )
 
