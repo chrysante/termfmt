@@ -193,52 +193,52 @@ inline namespace modifiers {
 /// Reset all currently applied ANSI format codes.
 /// This should not be used directly. Prefer using the `format(...)` wrapper
 /// functions above.
-extern internal::ModBase const Reset;
+TFMT_API extern internal::ModBase const Reset;
 
-extern Modifier const None;
+TFMT_API extern Modifier const None;
 
-extern Modifier const Bold;
-extern Modifier const Italic;
-extern Modifier const Underline;
-extern Modifier const Blink;
-extern Modifier const Concealed;
-extern Modifier const Crossed;
+TFMT_API extern Modifier const Bold;
+TFMT_API extern Modifier const Italic;
+TFMT_API extern Modifier const Underline;
+TFMT_API extern Modifier const Blink;
+TFMT_API extern Modifier const Concealed;
+TFMT_API extern Modifier const Crossed;
 
-extern Modifier const Grey;
-extern Modifier const Red;
-extern Modifier const Green;
-extern Modifier const Yellow;
-extern Modifier const Blue;
-extern Modifier const Magenta;
-extern Modifier const Cyan;
-extern Modifier const White;
+TFMT_API extern Modifier const Grey;
+TFMT_API extern Modifier const Red;
+TFMT_API extern Modifier const Green;
+TFMT_API extern Modifier const Yellow;
+TFMT_API extern Modifier const Blue;
+TFMT_API extern Modifier const Magenta;
+TFMT_API extern Modifier const Cyan;
+TFMT_API extern Modifier const White;
 
-extern Modifier const BrightGrey;
-extern Modifier const BrightRed;
-extern Modifier const BrightGreen;
-extern Modifier const BrightYellow;
-extern Modifier const BrightBlue;
-extern Modifier const BrightMagenta;
-extern Modifier const BrightCyan;
-extern Modifier const BrightWhite;
+TFMT_API extern Modifier const BrightGrey;
+TFMT_API extern Modifier const BrightRed;
+TFMT_API extern Modifier const BrightGreen;
+TFMT_API extern Modifier const BrightYellow;
+TFMT_API extern Modifier const BrightBlue;
+TFMT_API extern Modifier const BrightMagenta;
+TFMT_API extern Modifier const BrightCyan;
+TFMT_API extern Modifier const BrightWhite;
 
-extern Modifier const BGGrey;
-extern Modifier const BGRed;
-extern Modifier const BGGreen;
-extern Modifier const BGYellow;
-extern Modifier const BGBlue;
-extern Modifier const BGMagenta;
-extern Modifier const BGCyan;
-extern Modifier const BGWhite;
+TFMT_API extern Modifier const BGGrey;
+TFMT_API extern Modifier const BGRed;
+TFMT_API extern Modifier const BGGreen;
+TFMT_API extern Modifier const BGYellow;
+TFMT_API extern Modifier const BGBlue;
+TFMT_API extern Modifier const BGMagenta;
+TFMT_API extern Modifier const BGCyan;
+TFMT_API extern Modifier const BGWhite;
 
-extern Modifier const BGBrightGrey;
-extern Modifier const BGBrightRed;
-extern Modifier const BGBrightGreen;
-extern Modifier const BGBrightYellow;
-extern Modifier const BGBrightBlue;
-extern Modifier const BGBrightMagenta;
-extern Modifier const BGBrightCyan;
-extern Modifier const BGBrightWhite;
+TFMT_API extern Modifier const BGBrightGrey;
+TFMT_API extern Modifier const BGBrightRed;
+TFMT_API extern Modifier const BGBrightGreen;
+TFMT_API extern Modifier const BGBrightYellow;
+TFMT_API extern Modifier const BGBrightBlue;
+TFMT_API extern Modifier const BGBrightMagenta;
+TFMT_API extern Modifier const BGBrightCyan;
+TFMT_API extern Modifier const BGBrightWhite;
 
 } // namespace modifiers
 
@@ -458,7 +458,5 @@ tfmt::internal::OStreamWrapper<CharT, Traits> tfmt::format(
     Modifier mod, std::basic_ostream<CharT, Traits>& ostream) {
     return internal::OStreamWrapper<CharT, Traits>(std::move(mod), ostream);
 }
-
-#undef TFMT_API
 
 #endif // TERMFORMAT_H_
