@@ -71,24 +71,22 @@ bool tfmt::isTerminal(std::wostream const& ostream) {
            isTerminalImpl(ostream, std::wclog, stderr);
 }
 
-static auto tcOStreamIndex() {
-    static auto const index = std::ios_base::xalloc();
+static int tcOStreamIndex() {
+    static int index = std::ios_base::xalloc();
     return index;
 }
 
 static long& iword(std::ios_base& ios) {
-    static auto const index = tcOStreamIndex();
-    return ios.iword(index);
+    return ios.iword(tcOStreamIndex());
 }
 
 static long iword(std::ios_base const& ios) {
-    static auto const index = tcOStreamIndex();
     // We need to cast away constness to access .iword() method on
     // std::ios_base, as it does not provide a const overload.
     // However we take the argument by const& as conceptually this query does
     // not modify the object.
     std::ios_base& mutIos = const_cast<std::ios_base&>(ios);
-    return mutIos.iword(index);
+    return mutIos.iword(tcOStreamIndex());
 }
 
 static constexpr size_t terminalBit = 0;
@@ -244,7 +242,7 @@ private:
 template <typename CharT, typename Traits>
 void tfmt::pushModifier(Modifier mod,
                         std::basic_ostream<CharT, Traits>& ostream) {
-    static auto const index = tcOStreamIndex();
+    int index = tcOStreamIndex();
     auto* stackPtr = static_cast<ModStack*>(ostream.pword(index));
     if (stackPtr == nullptr) {
         stackPtr = ::new ModStack();
@@ -268,7 +266,7 @@ void tfmt::pushModifier(Modifier mod,
 
 template <typename CharT, typename Traits>
 void tfmt::popModifier(std::basic_ostream<CharT, Traits>& ostream) {
-    static auto const index = tcOStreamIndex();
+    int index = tcOStreamIndex();
     auto* const stackPtr = static_cast<ModStack*>(ostream.pword(index));
     assert(stackPtr && "popModifier called without a matching prior call to "
                        "pushModifier()");
@@ -297,6 +295,42 @@ tfmt::FormatGuard<std::ostream>::FormatGuard(Modifier mod):
 template <>
 tfmt::FormatGuard<std::wostream>::FormatGuard(Modifier mod):
     FormatGuard(std::move(mod), std::wcout) {}
+
+template <typename OStream>
+tfmt::FormatGuard<OStream>::FormatGuard(Modifier mod, OStream& ostream):
+ostream(&ostream) {
+    pushModifier(std::move(mod), *this->ostream);
+}
+
+template <typename OStream>
+tfmt::FormatGuard<OStream>::FormatGuard(FormatGuard&& rhs) noexcept:
+ostream(rhs.ostream) {
+    rhs.ostream = nullptr;
+}
+
+template <typename OStream>
+tfmt::FormatGuard<OStream>& tfmt::FormatGuard<OStream>::operator=(
+                                                                  FormatGuard&& rhs) noexcept {
+                                                                      pop();
+                                                                      std::swap(ostream, rhs.ostream);
+                                                                  }
+
+template <typename OStream>
+tfmt::FormatGuard<OStream>::FormatGuard::~FormatGuard() {
+    pop();
+}
+
+template <typename OStream>
+void tfmt::FormatGuard<OStream>::pop() {
+    if (ostream == nullptr) {
+        return;
+    }
+    popModifier(*ostream);
+    ostream = nullptr;
+}
+
+template class tfmt::FormatGuard<std::ostream>;
+template class tfmt::FormatGuard<std::wostream>;
 
 extern internal::ModBase const modifiers::Reset{
     "\033[00m", internal::ModBase::ResetTag{}

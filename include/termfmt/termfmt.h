@@ -307,39 +307,6 @@ inline tfmt::Modifier& tfmt::operator|=(Modifier& lhs, Modifier const& rhs) {
     return lhs = std::move(lhs) | rhs;
 }
 
-template <typename OStream>
-tfmt::FormatGuard<OStream>::FormatGuard(Modifier mod, OStream& ostream):
-    ostream(&ostream) {
-    pushModifier(std::move(mod), *this->ostream);
-}
-
-template <typename OStream>
-tfmt::FormatGuard<OStream>::FormatGuard(FormatGuard&& rhs) noexcept:
-    ostream(rhs.ostream) {
-    rhs.ostream = nullptr;
-}
-
-template <typename OStream>
-tfmt::FormatGuard<OStream>& tfmt::FormatGuard<OStream>::operator=(
-    FormatGuard&& rhs) noexcept {
-    pop();
-    std::swap(ostream, rhs.ostream);
-}
-
-template <typename OStream>
-tfmt::FormatGuard<OStream>::FormatGuard::~FormatGuard() {
-    pop();
-}
-
-template <typename OStream>
-void tfmt::FormatGuard<OStream>::pop() {
-    if (ostream == nullptr) {
-        return;
-    }
-    popModifier(*ostream);
-    ostream = nullptr;
-}
-
 template <typename CharT, typename Traits>
 void tfmt::format(Modifier mod,
                   std::basic_ostream<CharT, Traits>& ostream,
