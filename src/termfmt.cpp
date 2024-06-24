@@ -76,9 +76,7 @@ static int tcOStreamIndex() {
     return index;
 }
 
-static long& iword(std::ios_base& ios) {
-    return ios.iword(tcOStreamIndex());
-}
+static long& iword(std::ios_base& ios) { return ios.iword(tcOStreamIndex()); }
 
 static long iword(std::ios_base const& ios) {
     // We need to cast away constness to access .iword() method on
@@ -298,22 +296,22 @@ tfmt::FormatGuard<std::wostream>::FormatGuard(Modifier mod):
 
 template <typename OStream>
 tfmt::FormatGuard<OStream>::FormatGuard(Modifier mod, OStream& ostream):
-ostream(&ostream) {
+    ostream(&ostream) {
     pushModifier(std::move(mod), *this->ostream);
 }
 
 template <typename OStream>
 tfmt::FormatGuard<OStream>::FormatGuard(FormatGuard&& rhs) noexcept:
-ostream(rhs.ostream) {
+    ostream(rhs.ostream) {
     rhs.ostream = nullptr;
 }
 
 template <typename OStream>
 tfmt::FormatGuard<OStream>& tfmt::FormatGuard<OStream>::operator=(
-                                                                  FormatGuard&& rhs) noexcept {
-                                                                      pop();
-                                                                      std::swap(ostream, rhs.ostream);
-                                                                  }
+    FormatGuard&& rhs) noexcept {
+    pop();
+    std::swap(ostream, rhs.ostream);
+}
 
 template <typename OStream>
 tfmt::FormatGuard<OStream>::FormatGuard::~FormatGuard() {
@@ -332,9 +330,8 @@ void tfmt::FormatGuard<OStream>::pop() {
 template class tfmt::FormatGuard<std::ostream>;
 template class tfmt::FormatGuard<std::wostream>;
 
-extern internal::ModBase const modifiers::Reset{
-    "\033[00m", internal::ModBase::ResetTag{}
-};
+extern Modifier const modifiers::Reset{ "\033[00m",
+                                        internal::ModBase::ResetTag{} };
 
 extern Modifier const modifiers::None{ "", "" };
 

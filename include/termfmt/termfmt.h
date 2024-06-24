@@ -193,7 +193,7 @@ inline namespace modifiers {
 /// Reset all currently applied ANSI format codes.
 /// This should not be used directly. Prefer using the `format(...)` wrapper
 /// functions above.
-TFMT_API extern internal::ModBase const Reset;
+TFMT_API extern Modifier const Reset;
 
 TFMT_API extern Modifier const None;
 
@@ -373,8 +373,8 @@ private:
     template <typename T>
     explicit BasicVObjectWrapper(T&& objWrapper, Tag):
         impl([ow = std::forward<T>(objWrapper)](OstreamT& str) -> OstreamT& {
-        return str << ow;
-    }) {}
+            return str << ow;
+        }) {}
 
     std::function<OstreamT&(OstreamT&)> impl;
 };
