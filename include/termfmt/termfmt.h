@@ -155,13 +155,13 @@ FormatGuard(Modifier) -> FormatGuard<std::ostream>;
 /// and execute \p fn . \details After execution of \p fn the modifier \p mod
 /// will be popped from the stack.
 template <typename CharT, typename Traits>
-TFMT_API void format(Modifier mod,
-                     std::basic_ostream<CharT, Traits>& ostream,
-                     std::invocable auto&& fn);
+TFMT_API void formatScope(Modifier mod,
+                          std::basic_ostream<CharT, Traits>& ostream,
+                          std::invocable auto&& fn);
 
 /// \overload
 /// Execute \p fn with modifiers applied to `stdout`
-TFMT_API void format(Modifier mod, std::invocable auto&& fn);
+TFMT_API void formatScope(Modifier mod, std::invocable auto&& fn);
 
 /// Wrap a set of objects with a modifier
 /// \details Use with `operator<<(std::ostream&, ...)`:
@@ -308,14 +308,14 @@ inline tfmt::Modifier& tfmt::operator|=(Modifier& lhs, Modifier const& rhs) {
 }
 
 template <typename CharT, typename Traits>
-void tfmt::format(Modifier mod,
-                  std::basic_ostream<CharT, Traits>& ostream,
-                  std::invocable auto&& fn) {
+void tfmt::formatScope(Modifier mod,
+                       std::basic_ostream<CharT, Traits>& ostream,
+                       std::invocable auto&& fn) {
     FormatGuard fmt(std::move(mod), ostream);
     std::invoke(fn);
 }
 
-void tfmt::format(Modifier mod, std::invocable auto&& fn) {
+void tfmt::formatScope(Modifier mod, std::invocable auto&& fn) {
     FormatGuard fmt(std::move(mod));
     std::invoke(fn);
 }
