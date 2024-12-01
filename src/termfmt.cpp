@@ -191,7 +191,7 @@ static void putString(std::basic_ostream<CharT, Traits>& ostream,
 template <typename CharT, typename Traits>
 void internal::ModBase::put(std::basic_ostream<CharT, Traits>& ostream) const {
     if (isTermFormattable(ostream)) {
-        putString(ostream, ansiBuffer);
+        putString(ostream, ansiBuf);
     }
     if (isHTMLFormattable(ostream)) {
         if (isReset) {
@@ -199,7 +199,7 @@ void internal::ModBase::put(std::basic_ostream<CharT, Traits>& ostream) const {
             return;
         }
         ostream << "<font color=\"";
-        putString(ostream, htmlBuffer.front());
+        putString(ostream, htmlBuf.front());
         ostream << "\">";
     }
 }

@@ -5,7 +5,9 @@
 #include <functional>
 #include <iosfwd>
 #include <optional>
+#include <span>
 #include <string>
+#include <string_view>
 #include <tuple>
 #include <type_traits>
 #include <vector>
@@ -254,12 +256,12 @@ public:
 
 public:
     explicit ModBase(std::string_view ansiMod, ResetTag):
-        ansiBuffer(ansiMod), isReset(true) {}
+        ansiBuf(ansiMod), isReset(true) {}
     explicit ModBase(std::string_view ansiMod, std::string htmlMod):
         ModBase(ansiMod, std::vector{ htmlMod }) {}
     explicit ModBase(std::string_view ansiMod,
                      std::vector<std::string> htmlMod):
-        ansiBuffer(ansiMod), htmlBuffer(htmlMod) {}
+        ansiBuf(ansiMod), htmlBuf(htmlMod) {}
 
     template <typename CharT, typename Traits>
     friend std::basic_ostream<CharT, Traits>& operator<<(
@@ -268,13 +270,19 @@ public:
         return ostream;
     }
 
+    /// \Returns the ANSI codes representing this modifier
+    std::string_view ansiBuffer() const { return ansiBuf; }
+
+    /// \Returns the list of HTML tags representing this modifier
+    std::span<std::string const> htmlBuffer() { return htmlBuf; }
+
 private:
     template <typename CharT, typename Traits>
     void put(std::basic_ostream<CharT, Traits>& ostream) const;
 
 protected:
-    std::string ansiBuffer;
-    std::vector<std::string> htmlBuffer;
+    std::string ansiBuf;
+    std::vector<std::string> htmlBuf;
     bool isReset = false;
 };
 
@@ -288,18 +296,16 @@ public:
 
 inline tfmt::Modifier tfmt::operator|(Modifier const& lhs,
                                       Modifier const& rhs) {
-    auto htmlBuffer = lhs.htmlBuffer;
-    htmlBuffer.insert(htmlBuffer.end(),
-                      rhs.htmlBuffer.begin(),
-                      rhs.htmlBuffer.end());
-    return Modifier(lhs.ansiBuffer + rhs.ansiBuffer, std::move(htmlBuffer));
+    auto htmlBuf = lhs.htmlBuf;
+    htmlBuf.insert(htmlBuf.end(), rhs.htmlBuf.begin(), rhs.htmlBuf.end());
+    return Modifier(lhs.ansiBuf + rhs.ansiBuf, std::move(htmlBuf));
 }
 
 inline tfmt::Modifier tfmt::operator|(Modifier&& lhs, Modifier const& rhs) {
-    lhs.ansiBuffer += rhs.ansiBuffer;
-    lhs.htmlBuffer.insert(lhs.htmlBuffer.end(),
-                          rhs.htmlBuffer.begin(),
-                          rhs.htmlBuffer.end());
+    lhs.ansiBuf += rhs.ansiBuf;
+    lhs.htmlBuf.insert(lhs.htmlBuf.end(),
+                       rhs.htmlBuf.begin(),
+                       rhs.htmlBuf.end());
     return lhs;
 }
 
