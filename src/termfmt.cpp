@@ -54,7 +54,6 @@ static bool isTerminalImpl(OStream const& ostream,
         return filedescIsTerminal(file);
     }
     return false;
-    ;
 }
 
 template <>
@@ -322,8 +321,10 @@ tfmt::FormatGuard<OStream>::FormatGuard(FormatGuard&& rhs) noexcept:
 template <typename OStream>
 tfmt::FormatGuard<OStream>& tfmt::FormatGuard<OStream>::operator=(
     FormatGuard&& rhs) noexcept {
+    if (this == &rhs) return *this;
     pop();
     std::swap(ostream, rhs.ostream);
+    return *this;
 }
 
 template <typename OStream>
