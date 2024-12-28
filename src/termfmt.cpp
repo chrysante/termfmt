@@ -274,11 +274,24 @@ void tfmt::popModifier(std::basic_ostream<CharT, Traits>& ostream) {
     stack.apply(ostream);
 }
 
+template <typename CharT, typename Traits>
+void tfmt::reapplyModifiers(std::basic_ostream<CharT, Traits>& ostream) {
+    int index = tcOStreamIndex();
+    auto* const stackPtr = static_cast<ModStack*>(ostream.pword(index));
+    if (stackPtr) {
+        stackPtr->reset(ostream);
+        stackPtr->apply(ostream);
+    }
+}
+
 template void tfmt::pushModifier(Modifier, std::ostream&);
 template void tfmt::pushModifier(Modifier, std::wostream&);
 
 template void tfmt::popModifier(std::ostream&);
 template void tfmt::popModifier(std::wostream&);
+
+template void tfmt::reapplyModifiers(std::ostream&);
+template void tfmt::reapplyModifiers(std::wostream&);
 
 void tfmt::pushModifier(Modifier mod) {
     pushModifier(std::move(mod), std::cout);

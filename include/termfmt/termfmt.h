@@ -125,6 +125,10 @@ TFMT_API void popModifier(std::basic_ostream<CharT, Traits>& ostream);
 /// Pop modifier from `stdout`.
 TFMT_API void popModifier();
 
+/// Reapplies the current modifiers
+template <typename CharT, typename Traits>
+TFMT_API void reapplyModifiers(std::basic_ostream<CharT, Traits>& ostream);
+
 /// Scope guard object. Push modifier \p mod to \p ostream on construction, pop
 /// on destruction.
 template <typename OStream>
